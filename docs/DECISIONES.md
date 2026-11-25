@@ -113,6 +113,10 @@ Dependabot propone semanalmente actualizaciones de NuGet, actions e imagen base 
 
 ## 13. Pruebas
 
+Convenciones: **NUnit**, patrón **AAA** (`// Arrange`, `// Act`, `// Assert`), un escenario por prueba y
+nombres `Should_<Resultado>_When_<Condición>` (ej. `Should_ReturnNotFound_When_AuthorizationDoesNotExist`),
+de modo que el reporte de pruebas se lee como especificación del comportamiento.
+
 - Unitarias: dominio (distribución, invariantes del agregado).
 - Integración: API completa con `WebApplicationFactory` + PostgreSQL real vía Testcontainers
   (autenticación, autorización por rol, validaciones, idempotencia concurrente, 404).

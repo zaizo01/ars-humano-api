@@ -5,16 +5,16 @@ using Testcontainers.PostgreSql;
 namespace HealthAuthorizations.IntegrationTests;
 
 /// <summary>Levanta la API contra un PostgreSQL real en contenedor (requiere Docker).</summary>
-public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly PostgreSqlContainer _db = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
-    public async Task InitializeAsync() => await _db.StartAsync();
+    public Task StartDatabaseAsync() => _db.StartAsync();
 
-    async Task IAsyncLifetime.DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
         await base.DisposeAsync();
+        await _db.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -25,8 +25,19 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     }
 }
 
-[CollectionDefinition(Name)]
-public sealed class ApiCollection : ICollectionFixture<ApiFactory>
+/// <summary>Una sola API + base de datos para todas las pruebas del ensamblado.</summary>
+[SetUpFixture]
+public sealed class IntegrationTestSetup
 {
-    public const string Name = "api";
+    public static ApiFactory Factory { get; private set; } = null!;
+
+    [OneTimeSetUp]
+    public async Task OneTimeSetUp()
+    {
+        Factory = new ApiFactory();
+        await Factory.StartDatabaseAsync();
+    }
+
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown() => await Factory.DisposeAsync();
 }

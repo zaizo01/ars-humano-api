@@ -4,7 +4,7 @@ API REST para gestionar autorizaciones de servicios de salud: registro, consulta
 inactivación de autorizaciones, con cálculo de montos cubiertos por la ARS y copago del afiliado.
 
 **Stack:** .NET 10 · ASP.NET Core · EF Core + PostgreSQL · MediatR (CQRS) · FluentValidation · Mapster ·
-JWT · OpenAPI + Scalar · Serilog · xUnit + Testcontainers · Docker.
+JWT · OpenAPI + Scalar · Serilog · NUnit + Testcontainers · Docker.
 
 ## Ejecución rápida (Docker Desktop)
 
