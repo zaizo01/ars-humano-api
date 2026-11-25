@@ -95,7 +95,23 @@ Un conflicto se traduce a `409 Conflict`. Pendiente: exponerlo como `ETag` / `If
 - Health checks `live` (proceso) y `ready` (incluye PostgreSQL), pensados para probes de Kubernetes.
 - `EnableRetryOnFailure` en Npgsql para fallos transitorios de conexión.
 
-## 12. Pruebas
+## 12. CI/CD con GitHub Actions
+
+Se usa GitHub Actions en lugar de Azure DevOps porque el código vive en GitHub: el pipeline queda junto
+al repositorio, sin una organización externa ni service connections, y publica la imagen en GitHub
+Container Registry con el `GITHUB_TOKEN` del propio repo. Los conceptos (stages/jobs, artefactos,
+quality gates, publicación de imagen) son equivalentes y trasladables a Azure DevOps YAML.
+
+`.github/workflows/ci.yml`:
+
+1. **build-test:** restore, build en Release (warnings = errores), verificación de paquetes vulnerables,
+   pruebas unitarias + integración (Testcontainers) con cobertura y resumen en el job.
+2. **docker:** construye la imagen, la escanea con Trivy (falla ante vulnerabilidades críticas) y la
+   publica en GHCR solo desde `develop`, `main` y tags `v*` (las ramas feature solo validan).
+
+Dependabot propone semanalmente actualizaciones de NuGet, actions e imagen base contra `develop`.
+
+## 13. Pruebas
 
 - Unitarias: dominio (distribución, invariantes del agregado).
 - Integración: API completa con `WebApplicationFactory` + PostgreSQL real vía Testcontainers
