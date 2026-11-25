@@ -156,7 +156,7 @@ namespace HealthAuthorizations.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("AuthorizationId");
 
-                    b.HasIndex("ServiceTypeId");
+                    b.HasIndex("ServiceTypeId", "AuthorizationId");
 
                     b.ToTable("AutorizacionesDetalle", null, t =>
                         {

@@ -68,6 +68,26 @@ el índice único, se captura el conflicto y se devuelve la ganadora (probado co
 Concurrencia optimista con la columna de sistema `xmin` de PostgreSQL (`Version` en la respuesta).
 Un conflicto se traduce a `409 Conflict`. Pendiente: exponerlo como `ETag` / `If-Match` en `PUT`.
 
+## 8.1 Búsqueda: paginación por cursor (keyset)
+
+`GET /api/v1/authorizations` ordena por `Number` descendente (más recientes primero) y pagina con
+`WHERE "Number" < @cursor ORDER BY "Number" DESC LIMIT n+1`:
+
+- **Costo constante por página:** usa el índice único de `Number`; con `OFFSET` la página 10.000 obliga a
+  leer y descartar todas las anteriores.
+- **Estable ante inserciones:** si se registran autorizaciones mientras el cliente pagina, no se repiten ni
+  se saltan filas.
+- **Sin `COUNT(*)` total:** en tablas grandes contar todo cuesta más que la propia página. Se pide `n+1`
+  filas solo para saber si hay página siguiente (`hasMore`).
+- El listado devuelve una vista **resumida** (sin detalle de servicios, con nombre de afiliado y prestador
+  resueltos en el mismo SQL); el detalle completo está en `GET /{id}`.
+- Índices de apoyo: `(AffiliateId, ServiceDate)`, `(ProviderId, ServiceDate)`, `(Status, ServiceDate)`,
+  `ContractorId`, `IntermediaryId` y, para el filtro por tipo de servicio (`EXISTS`),
+  `AutorizacionesDetalle(ServiceTypeId, AuthorizationId)`.
+
+Trade-off: no permite saltar directo a la página N; para una API consumida por sistemas y pantallas con
+"cargar más" es la opción adecuada.
+
 ## 9. Manejo de errores
 
 `IExceptionHandler` global → respuestas `ProblemDetails` (RFC 9457) con `traceId` y `correlationId`:

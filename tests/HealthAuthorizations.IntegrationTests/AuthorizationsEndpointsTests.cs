@@ -1,40 +1,17 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using HealthAuthorizations.Application.Authorizations;
+using static HealthAuthorizations.IntegrationTests.TestApi;
 
 namespace HealthAuthorizations.IntegrationTests;
 
 [TestFixture]
 public sealed class AuthorizationsEndpointsTests
 {
-    private const string Url = "/api/v1/authorizations";
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
+    private const string Url = AuthorizationsUrl;
 
-    private static ApiFactory Factory => IntegrationTestSetup.Factory;
-
-    private static object ValidRequest(decimal amount = 1000m) => new
-    {
-        affiliateId = 1,
-        providerId = 3,
-        contractorId = 1,
-        intermediaryId = 1,
-        serviceDate = "2026-11-24",
-        services = new[] { new { serviceTypeId = 1, description = "Consulta", claimedAmount = amount } },
-    };
-
-    private static async Task<HttpClient> CreateAuthenticatedClientAsync(string user = "operador", string password = "Operador123!")
-    {
-        var client = Factory.CreateClient();
-        var response = await client.PostAsJsonAsync("/api/v1/auth/token", new { userName = user, password });
-        response.EnsureSuccessStatusCode();
-        var token = await response.Content.ReadFromJsonAsync<JsonElement>();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.GetProperty("accessToken").GetString());
-        return client;
-    }
-
+    private static object ValidRequest(decimal amount = 1000m) => AuthorizationRequest(amount: amount);
     [Test]
     public async Task Should_ReturnUnauthorized_When_RequestHasNoToken()
     {
@@ -52,7 +29,7 @@ public sealed class AuthorizationsEndpointsTests
     public async Task Should_ReturnForbidden_When_ReadOnlyUserCreatesAuthorization()
     {
         // Arrange
-        using var client = await CreateAuthenticatedClientAsync("consulta", "Consulta123!");
+        using var client = await CreateClientAsync("consulta", "Consulta123!");
 
         // Act
         var response = await client.PostAsJsonAsync(Url, ValidRequest());
@@ -65,7 +42,7 @@ public sealed class AuthorizationsEndpointsTests
     public async Task Should_CreateWithDistributedAmounts_When_RequestIsValid()
     {
         // Arrange
-        using var client = await CreateAuthenticatedClientAsync();
+        using var client = await CreateClientAsync();
 
         // Act
         var response = await client.PostAsJsonAsync(Url, ValidRequest(1000m));
@@ -86,7 +63,7 @@ public sealed class AuthorizationsEndpointsTests
     public async Task Should_ReturnAuthorizationWithDetails_When_GettingExistingId()
     {
         // Arrange
-        using var client = await CreateAuthenticatedClientAsync();
+        using var client = await CreateClientAsync();
         var created = await client.PostAsJsonAsync(Url, ValidRequest(1000m));
         var createdBody = await created.Content.ReadFromJsonAsync<AuthorizationResponse>(Json);
 
@@ -106,7 +83,7 @@ public sealed class AuthorizationsEndpointsTests
     public async Task Should_CreateOnlyOneAuthorization_When_SameIdempotencyKeyIsSentConcurrently()
     {
         // Arrange
-        using var client = await CreateAuthenticatedClientAsync();
+        using var client = await CreateClientAsync();
         var key = Guid.NewGuid().ToString();
 
         async Task<AuthorizationResponse> SendAsync()
@@ -129,7 +106,7 @@ public sealed class AuthorizationsEndpointsTests
     public async Task Should_ReturnValidationProblem_When_RequestIsInvalid()
     {
         // Arrange
-        using var client = await CreateAuthenticatedClientAsync();
+        using var client = await CreateClientAsync();
         var request = new { affiliateId = 999, providerId = 3, contractorId = 1, serviceDate = "2026-11-24", services = Array.Empty<object>() };
 
         // Act
@@ -149,7 +126,7 @@ public sealed class AuthorizationsEndpointsTests
     public async Task Should_ReturnNotFound_When_AuthorizationDoesNotExist()
     {
         // Arrange
-        using var client = await CreateAuthenticatedClientAsync();
+        using var client = await CreateClientAsync();
         var unknownId = Guid.NewGuid();
 
         // Act

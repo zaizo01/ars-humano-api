@@ -1,6 +1,8 @@
 using HealthAuthorizations.Application.Authorizations;
 using HealthAuthorizations.Application.Authorizations.Create;
 using HealthAuthorizations.Application.Authorizations.GetById;
+using HealthAuthorizations.Application.Authorizations.Search;
+using HealthAuthorizations.Application.Common;
 using HealthAuthorizations.Infrastructure.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +31,18 @@ public sealed class AuthorizationsController(ISender sender) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
+    /// <summary>
+    /// Busca autorizaciones (más recientes primero) con paginación por cursor.
+    /// Para la página siguiente envíe el <c>nextCursor</c> recibido en el parámetro <c>cursor</c>.
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType<CursorPage<AuthorizationSummaryResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<CursorPage<AuthorizationSummaryResponse>>> Search(
+        [FromQuery] SearchAuthorizationsQuery query,
+        CancellationToken cancellationToken) =>
+        await sender.Send(query, cancellationToken);
+
     /// <summary>Obtiene el detalle de una autorización.</summary>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<AuthorizationResponse>(StatusCodes.Status200OK)]
@@ -36,5 +50,5 @@ public sealed class AuthorizationsController(ISender sender) : ControllerBase
     public async Task<ActionResult<AuthorizationResponse>> GetById(Guid id, CancellationToken cancellationToken) =>
         await sender.Send(new GetAuthorizationByIdQuery(id), cancellationToken);
 
-    // Pendientes: GET (búsqueda paginada), PUT /{id} (con If-Match), DELETE /{id} (inactivación lógica).
+    // Pendientes: PUT /{id} (con If-Match), DELETE /{id} (inactivación lógica).
 }

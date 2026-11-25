@@ -80,6 +80,7 @@ internal sealed class AuthorizationDetailConfiguration : IEntityTypeConfiguratio
         builder.Property(d => d.CopayAmount).HasPrecision(18, 2);
 
         builder.HasOne<ServiceType>().WithMany().HasForeignKey(d => d.ServiceTypeId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasIndex(d => d.ServiceTypeId);
+        // Cubre el filtro de búsqueda "autorizaciones que incluyen el tipo de servicio X" (EXISTS por AuthorizationId).
+        builder.HasIndex(d => new { d.ServiceTypeId, d.AuthorizationId });
     }
 }
