@@ -3,16 +3,17 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using FluentAssertions;
 using HealthAuthorizations.Application.Authorizations;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-[Collection(ApiCollection.Name)]
-public sealed class AuthorizationsEndpointsTests(ApiFactory factory)
+[TestFixture]
+public sealed class AuthorizationsEndpointsTests
 {
     private const string Url = "/api/v1/authorizations";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
+
+    private static ApiFactory Factory => IntegrationTestSetup.Factory;
 
     private static object ValidRequest(decimal amount = 1000m) => new
     {
@@ -24,9 +25,9 @@ public sealed class AuthorizationsEndpointsTests(ApiFactory factory)
         services = new[] { new { serviceTypeId = 1, description = "Consulta", claimedAmount = amount } },
     };
 
-    private async Task<HttpClient> CreateClientAsync(string user = "operador", string password = "Operador123!")
+    private static async Task<HttpClient> CreateAuthenticatedClientAsync(string user = "operador", string password = "Operador123!")
     {
-        var client = factory.CreateClient();
+        var client = Factory.CreateClient();
         var response = await client.PostAsJsonAsync("/api/v1/auth/token", new { userName = user, password });
         response.EnsureSuccessStatusCode();
         var token = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -34,46 +35,78 @@ public sealed class AuthorizationsEndpointsTests(ApiFactory factory)
         return client;
     }
 
-    [Fact]
-    public async Task Requests_without_token_are_rejected()
+    [Test]
+    public async Task Should_ReturnUnauthorized_When_RequestHasNoToken()
     {
-        var response = await factory.CreateClient().PostAsJsonAsync(Url, ValidRequest());
+        // Arrange
+        using var client = Factory.CreateClient();
 
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-    [Fact]
-    public async Task Read_only_user_cannot_create()
-    {
-        var client = await CreateClientAsync("consulta", "Consulta123!");
-
+        // Act
         var response = await client.PostAsJsonAsync(Url, ValidRequest());
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
     }
 
-    [Fact]
-    public async Task Create_then_get_returns_distributed_amounts()
+    [Test]
+    public async Task Should_ReturnForbidden_When_ReadOnlyUserCreatesAuthorization()
     {
-        var client = await CreateClientAsync();
+        // Arrange
+        using var client = await CreateAuthenticatedClientAsync("consulta", "Consulta123!");
 
+        // Act
+        var response = await client.PostAsJsonAsync(Url, ValidRequest());
+
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+    }
+
+    [Test]
+    public async Task Should_CreateWithDistributedAmounts_When_RequestIsValid()
+    {
+        // Arrange
+        using var client = await CreateAuthenticatedClientAsync();
+
+        // Act
+        var response = await client.PostAsJsonAsync(Url, ValidRequest(1000m));
+
+        // Assert
+        var body = await response.Content.ReadFromJsonAsync<AuthorizationResponse>(Json);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created));
+            Assert.That(response.Headers.Location, Is.Not.Null);
+            Assert.That(body!.TotalCovered, Is.EqualTo(700m));
+            Assert.That(body.TotalCopay, Is.EqualTo(300m));
+            Assert.That(body.Number, Is.Positive);
+        }
+    }
+
+    [Test]
+    public async Task Should_ReturnAuthorizationWithDetails_When_GettingExistingId()
+    {
+        // Arrange
+        using var client = await CreateAuthenticatedClientAsync();
         var created = await client.PostAsJsonAsync(Url, ValidRequest(1000m));
+        var createdBody = await created.Content.ReadFromJsonAsync<AuthorizationResponse>(Json);
 
-        created.StatusCode.Should().Be(HttpStatusCode.Created);
-        var body = await created.Content.ReadFromJsonAsync<AuthorizationResponse>(Json);
-        body!.TotalCovered.Should().Be(700m);
-        body.TotalCopay.Should().Be(300m);
-        body.Number.Should().BePositive();
+        // Act
+        var fetched = await client.GetFromJsonAsync<AuthorizationResponse>($"{Url}/{createdBody!.Id}", Json);
 
-        var fetched = await client.GetFromJsonAsync<AuthorizationResponse>(created.Headers.Location, Json);
-        fetched!.Id.Should().Be(body.Id);
-        fetched.Details.Should().ContainSingle().Which.CoveredAmount.Should().Be(700m);
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(fetched!.Id, Is.EqualTo(createdBody.Id));
+            Assert.That(fetched.Details, Has.Count.EqualTo(1));
+            Assert.That(fetched.Details[0].CoveredAmount, Is.EqualTo(700m));
+        }
     }
 
-    [Fact]
-    public async Task Same_idempotency_key_does_not_duplicate()
+    [Test]
+    public async Task Should_CreateOnlyOneAuthorization_When_SameIdempotencyKeyIsSentConcurrently()
     {
-        var client = await CreateClientAsync();
+        // Arrange
+        using var client = await CreateAuthenticatedClientAsync();
         var key = Guid.NewGuid().ToString();
 
         async Task<AuthorizationResponse> SendAsync()
@@ -85,32 +118,44 @@ public sealed class AuthorizationsEndpointsTests(ApiFactory factory)
             return (await response.Content.ReadFromJsonAsync<AuthorizationResponse>(Json))!;
         }
 
+        // Act
         var results = await Task.WhenAll(SendAsync(), SendAsync(), SendAsync());
 
-        results.Select(r => r.Id).Distinct().Should().ContainSingle();
+        // Assert
+        Assert.That(results.Select(r => r.Id).Distinct(), Has.Exactly(1).Items);
     }
 
-    [Fact]
-    public async Task Invalid_request_returns_validation_problem()
+    [Test]
+    public async Task Should_ReturnValidationProblem_When_RequestIsInvalid()
     {
-        var client = await CreateClientAsync();
+        // Arrange
+        using var client = await CreateAuthenticatedClientAsync();
         var request = new { affiliateId = 999, providerId = 3, contractorId = 1, serviceDate = "2026-11-24", services = Array.Empty<object>() };
 
+        // Act
         var response = await client.PostAsJsonAsync(Url, request);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        // Assert
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
-        problem.GetProperty("errors").EnumerateObject().Select(p => p.Name)
-            .Should().Contain(["AffiliateId", "Services"]);
+        var invalidFields = problem.GetProperty("errors").EnumerateObject().Select(p => p.Name).ToList();
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+            Assert.That(invalidFields, Does.Contain("AffiliateId").And.Contain("Services"));
+        }
     }
 
-    [Fact]
-    public async Task Unknown_id_returns_404()
+    [Test]
+    public async Task Should_ReturnNotFound_When_AuthorizationDoesNotExist()
     {
-        var client = await CreateClientAsync();
+        // Arrange
+        using var client = await CreateAuthenticatedClientAsync();
+        var unknownId = Guid.NewGuid();
 
-        var response = await client.GetAsync($"{Url}/{Guid.NewGuid()}");
+        // Act
+        var response = await client.GetAsync($"{Url}/{unknownId}");
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        // Assert
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
     }
 }

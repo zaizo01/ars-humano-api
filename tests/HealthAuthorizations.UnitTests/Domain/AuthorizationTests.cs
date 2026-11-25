@@ -1,69 +1,130 @@
-using FluentAssertions;
 using HealthAuthorizations.Domain.Authorizations;
 using HealthAuthorizations.Domain.Common;
 
 namespace HealthAuthorizations.UnitTests.Domain;
 
+[TestFixture]
 public sealed class AuthorizationTests
 {
     private static readonly AuthorizationParties Parties = new(AffiliateId: 1, ProviderId: 1, ContractorId: 1, IntermediaryId: null);
-    private static readonly DateOnly Today = new(2026, 11, 24);
-    private readonly IAmountDistributionPolicy _policy = new PercentageDistributionPolicy(70m);
+    private static readonly DateOnly ServiceDate = new(2026, 11, 24);
+    private static readonly IAmountDistributionPolicy Policy = new PercentageDistributionPolicy(70m);
 
-    [Fact]
-    public void Create_calculates_detail_and_totals()
+    private static Authorization CreateAuthorization(params ServiceLine[] services) =>
+        Authorization.Create(Parties, ServiceDate, notes: null, services, Policy);
+
+    [Test]
+    public void Should_CalculateDetailAndTotals_When_CreatedWithValidServices()
     {
-        var authorization = Authorization.Create(Parties, Today, null,
-            [new ServiceLine(1, "Consulta general", 1000m), new ServiceLine(4, "Hemograma", 500m)], _policy);
+        // Arrange
+        ServiceLine[] services = [new(1, "Consulta general", 1000m), new(4, "Hemograma", 500m)];
 
-        authorization.Status.Should().Be(AuthorizationStatus.Active);
-        authorization.Details.Should().HaveCount(2);
-        authorization.TotalClaimed.Should().Be(1500m);
-        authorization.TotalCovered.Should().Be(1050m);
-        authorization.TotalCopay.Should().Be(450m);
-        authorization.Details.Should().OnlyContain(d => d.AuthorizationId == authorization.Id);
+        // Act
+        var authorization = CreateAuthorization(services);
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(authorization.Status, Is.EqualTo(AuthorizationStatus.Active));
+            Assert.That(authorization.Details, Has.Count.EqualTo(2));
+            Assert.That(authorization.TotalClaimed, Is.EqualTo(1500m));
+            Assert.That(authorization.TotalCovered, Is.EqualTo(1050m));
+            Assert.That(authorization.TotalCopay, Is.EqualTo(450m));
+            Assert.That(authorization.Details, Has.All.Property(nameof(AuthorizationDetail.AuthorizationId)).EqualTo(authorization.Id));
+        }
     }
 
-    [Fact]
-    public void Create_requires_at_least_one_service()
+    [Test]
+    public void Should_ThrowDomainException_When_CreatedWithoutServices()
     {
-        var act = () => Authorization.Create(Parties, Today, null, [], _policy);
+        // Arrange
+        ServiceLine[] noServices = [];
 
-        act.Should().Throw<DomainException>().Which.Code.Should().Be("authorization.no_services");
+        // Act
+        var exception = Assert.Throws<DomainException>(() => CreateAuthorization(noServices));
+
+        // Assert
+        Assert.That(exception.Code, Is.EqualTo("authorization.no_services"));
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-10)]
-    public void Create_rejects_non_positive_amounts(decimal amount)
+    [TestCase(0)]
+    [TestCase(-10)]
+    public void Should_ThrowDomainException_When_ServiceAmountIsNotPositive(decimal amount)
     {
-        var act = () => Authorization.Create(Parties, Today, null, [new ServiceLine(1, null, amount)], _policy);
+        // Arrange
+        var service = new ServiceLine(1, null, amount);
 
-        act.Should().Throw<DomainException>().Which.Code.Should().Be("amount.not_positive");
+        // Act
+        var exception = Assert.Throws<DomainException>(() => CreateAuthorization(service));
+
+        // Assert
+        Assert.That(exception.Code, Is.EqualTo("amount.not_positive"));
     }
 
-    [Fact]
-    public void Update_replaces_services_and_recalculates_totals()
+    [Test]
+    public void Should_ReplaceServicesAndRecalculateTotals_When_Updated()
     {
-        var authorization = Authorization.Create(Parties, Today, null, [new ServiceLine(1, null, 1000m)], _policy);
+        // Arrange
+        var authorization = CreateAuthorization(new ServiceLine(1, null, 1000m));
 
-        authorization.Update(Parties, Today, "Ajuste", [new ServiceLine(2, null, 200m)], _policy);
+        // Act
+        authorization.Update(Parties, ServiceDate, "Ajuste", [new ServiceLine(2, null, 200m)], Policy);
 
-        authorization.Details.Should().ContainSingle().Which.ServiceTypeId.Should().Be(2);
-        authorization.TotalClaimed.Should().Be(200m);
-        authorization.Notes.Should().Be("Ajuste");
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(authorization.Details, Has.Count.EqualTo(1));
+            Assert.That(authorization.Details.Single().ServiceTypeId, Is.EqualTo(2));
+            Assert.That(authorization.TotalClaimed, Is.EqualTo(200m));
+            Assert.That(authorization.Notes, Is.EqualTo("Ajuste"));
+        }
     }
 
-    [Fact]
-    public void Deactivated_authorization_cannot_be_modified_or_deactivated_again()
+    [Test]
+    public void Should_MarkAsInactiveAndKeepRecord_When_Deactivated()
     {
-        var authorization = Authorization.Create(Parties, Today, null, [new ServiceLine(1, null, 1000m)], _policy);
+        // Arrange
+        var authorization = CreateAuthorization(new ServiceLine(1, null, 1000m));
+        var deactivatedAt = new DateTimeOffset(2026, 11, 25, 10, 0, 0, TimeSpan.Zero);
+
+        // Act
+        authorization.Deactivate(deactivatedAt);
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(authorization.Status, Is.EqualTo(AuthorizationStatus.Inactive));
+            Assert.That(authorization.DeactivatedAt, Is.EqualTo(deactivatedAt));
+            Assert.That(authorization.Details, Is.Not.Empty);
+        }
+    }
+
+    [Test]
+    public void Should_ThrowDomainException_When_UpdatingInactiveAuthorization()
+    {
+        // Arrange
+        var authorization = CreateAuthorization(new ServiceLine(1, null, 1000m));
         authorization.Deactivate(DateTimeOffset.UtcNow);
 
-        authorization.Status.Should().Be(AuthorizationStatus.Inactive);
-        authorization.Invoking(a => a.Update(Parties, Today, null, [new ServiceLine(1, null, 1m)], _policy))
-            .Should().Throw<DomainException>().Which.Code.Should().Be("authorization.inactive");
-        authorization.Invoking(a => a.Deactivate(DateTimeOffset.UtcNow))
-            .Should().Throw<DomainException>();
+        // Act
+        var exception = Assert.Throws<DomainException>(() =>
+            authorization.Update(Parties, ServiceDate, null, [new ServiceLine(1, null, 1m)], Policy));
+
+        // Assert
+        Assert.That(exception.Code, Is.EqualTo("authorization.inactive"));
+    }
+
+    [Test]
+    public void Should_ThrowDomainException_When_DeactivatingAlreadyInactiveAuthorization()
+    {
+        // Arrange
+        var authorization = CreateAuthorization(new ServiceLine(1, null, 1000m));
+        authorization.Deactivate(DateTimeOffset.UtcNow);
+
+        // Act
+        var exception = Assert.Throws<DomainException>(() => authorization.Deactivate(DateTimeOffset.UtcNow));
+
+        // Assert
+        Assert.That(exception.Code, Is.EqualTo("authorization.inactive"));
     }
 }
