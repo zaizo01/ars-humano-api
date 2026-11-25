@@ -69,6 +69,12 @@ dotnet test                                   # unitarias + integración (requie
 dotnet test --collect:"XPlat Code Coverage"   # con cobertura
 ```
 
+## CI/CD
+
+GitHub Actions (`.github/workflows/ci.yml`) en cada push y pull request:
+build → vulnerabilidades de paquetes → pruebas con cobertura → imagen Docker → escaneo Trivy →
+publicación en `ghcr.io` (solo `develop`, `main` y tags `v*`).
+
 ## Estructura
 
 ```
@@ -102,4 +108,5 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 | Inactivar (borrado lógico)                      | Pendiente   |
 | Endpoints de catálogos                          | Pendiente   |
 | Eventos a otros sistemas (Outbox)               | Pendiente   |
-| Pipeline Azure DevOps, manifiestos K8s, GitOps  | Pendiente   |
+| Pipeline CI (GitHub Actions)                    | Hecho       |
+| SonarQube, manifiestos K8s, GitOps              | Pendiente   |
