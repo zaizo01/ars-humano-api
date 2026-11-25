@@ -62,6 +62,24 @@ curl -X POST http://localhost:8080/api/v1/authorizations \
       }'
 ```
 
+## Ejemplo: buscar autorizaciones
+
+Filtros opcionales y combinables: `number`, `affiliateId`, `providerId`, `contractorId`, `intermediaryId`,
+`serviceTypeId`, `status` (`Active`/`Inactive`), `fromDate`, `toDate`. Paginación: `pageSize` (1–100, por
+defecto 20) y `cursor`.
+
+```bash
+curl "http://localhost:8080/api/v1/authorizations?affiliateId=1&status=Active&pageSize=20" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{ "items": [ { "number": 42, "affiliateName": "María Pérez", "providerName": "Clínica Santa Lucía", "...": "..." } ],
+  "nextCursor": 23, "hasMore": true }
+```
+
+Para la página siguiente se repite la consulta agregando `&cursor=23`.
+
 ## Pruebas
 
 ```bash
@@ -103,7 +121,7 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 |-------------------------------------------------|-------------|
 | Crear autorización (idempotente)                | Hecho       |
 | Obtener detalle                                 | Hecho       |
-| Búsqueda paginada con filtros                   | Pendiente   |
+| Búsqueda paginada con filtros                   | Hecho       |
 | Actualizar (concurrencia optimista / If-Match)  | Pendiente   |
 | Inactivar (borrado lógico)                      | Pendiente   |
 | Endpoints de catálogos                          | Pendiente   |
