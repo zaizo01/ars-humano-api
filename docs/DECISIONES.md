@@ -65,8 +65,26 @@ el índice único, se captura el conflicto y se devuelve la ganadora (probado co
 
 ## 8. Concurrencia
 
-Concurrencia optimista con la columna de sistema `xmin` de PostgreSQL (`Version` en la respuesta).
-Un conflicto se traduce a `409 Conflict`. Pendiente: exponerlo como `ETag` / `If-Match` en `PUT`.
+Concurrencia optimista con la columna de sistema `xmin` de PostgreSQL, expuesta en HTTP como `ETag`
+(`GET`, `POST` y `PUT` lo devuelven). `PUT /{id}` **exige** `If-Match`:
+
+| Situación                                                        | Respuesta |
+|------------------------------------------------------------------|-----------|
+| Sin `If-Match`                                                   | `428 Precondition Required` |
+| `If-Match` con formato inválido                                  | `400` |
+| La versión enviada ya no es la vigente (otro usuario modificó)   | `412 Precondition Failed` |
+| Otro proceso modifica la fila entre la lectura y el guardado     | `409 Conflict` (detectado por `xmin`) |
+
+Exigir `If-Match` (en vez de dejarlo opcional) evita la "actualización perdida": un cliente no puede
+sobrescribir sin saberlo cambios que no vio. Probado con 5 `PUT` simultáneos con el mismo ETag: solo uno
+se aplica.
+
+`PUT` reemplaza los datos y la lista completa de servicios (semántica de reemplazo) y recalcula los montos
+con la política vigente. El número de autorización no cambia. Una autorización inactiva no puede
+modificarse (`422`).
+
+Las reglas de validación comunes a crear y actualizar viven en `AuthorizationDataValidator<T>` para no
+duplicarlas.
 
 ## 8.1 Búsqueda: paginación por cursor (keyset)
 

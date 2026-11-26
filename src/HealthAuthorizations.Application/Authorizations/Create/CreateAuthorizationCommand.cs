@@ -10,11 +10,9 @@ public sealed record CreateAuthorizationCommand(
     int? IntermediaryId,
     DateOnly ServiceDate,
     string? Notes,
-    IReadOnlyList<ServiceLineRequest> Services) : IRequest<AuthorizationResponse>
+    IReadOnlyList<ServiceLineRequest> Services) : IRequest<AuthorizationResponse>, IAuthorizationData
 {
     /// <summary>Viene del header <c>Idempotency-Key</c>, no del body.</summary>
     [JsonIgnore]
     public string? IdempotencyKey { get; init; }
 }
-
-public sealed record ServiceLineRequest(int ServiceTypeId, string? Description, decimal ClaimedAmount);

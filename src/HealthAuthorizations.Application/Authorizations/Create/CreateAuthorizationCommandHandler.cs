@@ -25,10 +25,10 @@ public sealed class CreateAuthorizationCommandHandler(
         }
 
         var authorization = Authorization.Create(
-            new AuthorizationParties(request.AffiliateId, request.ProviderId, request.ContractorId, request.IntermediaryId),
+            request.ToParties(),
             request.ServiceDate,
             request.Notes,
-            request.Services.Select(s => new ServiceLine(s.ServiceTypeId, s.Description, s.ClaimedAmount)).ToList(),
+            request.ToServiceLines(),
             distributionPolicy,
             request.IdempotencyKey);
 

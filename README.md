@@ -62,6 +62,22 @@ curl -X POST http://localhost:8080/api/v1/authorizations \
       }'
 ```
 
+## Ejemplo: actualizar una autorización
+
+1. Consultarla y tomar el header `ETag` de la respuesta (ej. `"812"`).
+2. Enviar el `PUT` con ese valor en `If-Match`. El body es igual al de creación y reemplaza los servicios.
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/authorizations/{id} \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'If-Match: "812"' \
+  -H "Content-Type: application/json" \
+  -d '{ "affiliateId": 1, "providerId": 3, "contractorId": 1, "serviceDate": "2026-11-24",
+        "services": [ { "serviceTypeId": 1, "claimedAmount": 1200.00 } ] }'
+```
+
+Si otro usuario la modificó después de consultarla, la API responde `412` y hay que volver al paso 1.
+
 ## Ejemplo: buscar autorizaciones
 
 Filtros opcionales y combinables: `number`, `affiliateId`, `providerId`, `contractorId`, `intermediaryId`,
@@ -122,7 +138,7 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 | Crear autorización (idempotente)                | Hecho       |
 | Obtener detalle                                 | Hecho       |
 | Búsqueda paginada con filtros                   | Hecho       |
-| Actualizar (concurrencia optimista / If-Match)  | Pendiente   |
+| Actualizar (concurrencia optimista / If-Match)  | Hecho       |
 | Inactivar (borrado lógico)                      | Pendiente   |
 | Endpoints de catálogos                          | Pendiente   |
 | Eventos a otros sistemas (Outbox)               | Pendiente   |
