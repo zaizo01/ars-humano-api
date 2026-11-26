@@ -27,6 +27,9 @@ public static class DependencyInjection
 
         TypeAdapterConfig.GlobalSettings.Scan(assembly);
 
+        // Caché en memoria (L1). Registrar IDistributedCache (p. ej. Redis) lo convierte en L2 sin cambiar los handlers.
+        services.AddHybridCache();
+
         services.AddOptions<CoverageOptions>()
             .Bind(configuration.GetSection(CoverageOptions.SectionName))
             .Validate(o => o.CoveragePercentage is >= 0m and <= 100m, "Coverage:CoveragePercentage debe estar entre 0 y 100.")

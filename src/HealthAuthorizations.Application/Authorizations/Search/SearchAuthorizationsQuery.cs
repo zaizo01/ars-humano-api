@@ -7,8 +7,8 @@ namespace HealthAuthorizations.Application.Authorizations.Search;
 /// <summary>Búsqueda de autorizaciones. Todos los filtros son opcionales y se combinan con AND.</summary>
 public sealed record SearchAuthorizationsQuery : IRequest<CursorPage<AuthorizationSummaryResponse>>
 {
-    public const int DefaultPageSize = 20;
-    public const int MaxPageSize = 100;
+    public const int DefaultPageSize = PaginationRules.DefaultPageSize;
+    public const int MaxPageSize = PaginationRules.MaxPageSize;
 
     public long? Number { get; init; }
     public int? AffiliateId { get; init; }
