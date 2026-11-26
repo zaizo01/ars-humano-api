@@ -1,4 +1,5 @@
 using FluentValidation;
+using HealthAuthorizations.Application.Common;
 
 namespace HealthAuthorizations.Application.Authorizations.Search;
 
@@ -6,8 +7,8 @@ public sealed class SearchAuthorizationsQueryValidator : AbstractValidator<Searc
 {
     public SearchAuthorizationsQueryValidator()
     {
-        RuleFor(x => x.PageSize).InclusiveBetween(1, SearchAuthorizationsQuery.MaxPageSize);
-        RuleFor(x => x.Cursor).GreaterThan(0).When(x => x.Cursor.HasValue);
+        RuleFor(x => x.PageSize).ValidPageSize();
+        RuleFor(x => x.Cursor).ValidCursor();
         RuleFor(x => x.Number).GreaterThan(0).When(x => x.Number.HasValue);
         RuleFor(x => x.Status).IsInEnum().When(x => x.Status.HasValue);
 

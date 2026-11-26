@@ -44,10 +44,7 @@ public sealed class SearchAuthorizationsQueryHandler(IApplicationDbContext db)
             .Take(request.PageSize + 1)
             .ToListAsync(cancellationToken);
 
-        var hasMore = rows.Count > request.PageSize;
-        var items = hasMore ? rows.GetRange(0, request.PageSize) : rows;
-
-        return new CursorPage<AuthorizationSummaryResponse>(items, hasMore ? items[^1].Number : null);
+        return CursorPage.From(rows, request.PageSize, a => a.Number);
     }
 
     private static IQueryable<Authorization> ApplyFilters(IQueryable<Authorization> query, SearchAuthorizationsQuery r)
