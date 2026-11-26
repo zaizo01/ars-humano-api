@@ -78,6 +78,14 @@ curl -X PUT http://localhost:8080/api/v1/authorizations/{id} \
 
 Si otro usuario la modificó después de consultarla, la API responde `412` y hay que volver al paso 1.
 
+## Ejemplo: inactivar una autorización
+
+```bash
+curl -X DELETE http://localhost:8080/api/v1/authorizations/{id} -H "Authorization: Bearer $TOKEN"
+```
+
+Responde `204`. La autorización se conserva con estado `Inactive` y ya no puede modificarse.
+
 ## Ejemplo: buscar autorizaciones
 
 Filtros opcionales y combinables: `number`, `affiliateId`, `providerId`, `contractorId`, `intermediaryId`,
@@ -139,7 +147,7 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 | Obtener detalle                                 | Hecho       |
 | Búsqueda paginada con filtros                   | Hecho       |
 | Actualizar (concurrencia optimista / If-Match)  | Hecho       |
-| Inactivar (borrado lógico)                      | Pendiente   |
+| Inactivar (borrado lógico)                      | Hecho       |
 | Endpoints de catálogos                          | Pendiente   |
 | Eventos a otros sistemas (Outbox)               | Pendiente   |
 | Pipeline CI (GitHub Actions)                    | Hecho       |
