@@ -201,13 +201,27 @@ correlativo.
 
 Se usa GitHub Actions en lugar de Azure DevOps porque el código vive en GitHub: el pipeline queda junto
 al repositorio, sin una organización externa ni service connections, y publica la imagen en GitHub
-Container Registry con el `GITHUB_TOKEN` del propio repo. Los conceptos (stages/jobs, artefactos,
-quality gates, publicación de imagen) son equivalentes y trasladables a Azure DevOps YAML.
+Container Registry con el `GITHUB_TOKEN` del propio repo. No se incluye un `azure-pipelines.yml` que
+nunca se ejecute: sería código sin verificar. Los conceptos son equivalentes y la migración es
+principalmente de sintaxis:
+
+| GitHub Actions | Azure DevOps |
+|---|---|
+| workflow (`.github/workflows/ci.yml`) | pipeline (`azure-pipelines.yml`) |
+| job / step | stage → job → step / task |
+| `secrets.*` | variable groups o Azure Key Vault |
+| `environment` con revisores | environment con *approvals and checks* |
+| GitHub Container Registry | Azure Container Registry |
+| actions del marketplace | tasks del marketplace |
 
 `.github/workflows/ci.yml`:
 
 1. **build-test:** restore, build en Release (warnings = errores), verificación de paquetes vulnerables,
    pruebas unitarias + integración (Testcontainers) con cobertura y resumen en el job.
+   Si existe el secret `SONAR_TOKEN`, el build y las pruebas se envuelven con el análisis de
+   **SonarCloud** (cobertura OpenCover + resultados de pruebas) y el job espera el *quality gate*: si
+   falla (cobertura, duplicación, bugs, vulnerabilidades o code smells bloqueantes), falla el pipeline.
+   Migraciones generadas quedan excluidas del análisis.
 2. **docker:** construye la imagen, la escanea con Trivy (falla ante vulnerabilidades críticas) y la
    publica en GHCR solo desde `develop`, `main` y tags `v*` (las ramas feature solo validan).
 

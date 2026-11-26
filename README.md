@@ -139,8 +139,12 @@ dotnet test --collect:"XPlat Code Coverage"   # con cobertura
 ## CI/CD
 
 GitHub Actions (`.github/workflows/ci.yml`) en cada push y pull request:
-build → vulnerabilidades de paquetes → pruebas con cobertura → imagen Docker → escaneo Trivy →
-publicación en `ghcr.io` (solo `develop`, `main` y tags `v*`).
+build → vulnerabilidades de paquetes → pruebas con cobertura → análisis SonarCloud + quality gate →
+imagen Docker → escaneo Trivy → publicación en `ghcr.io` (solo `develop`, `main` y tags `v*`) →
+actualización del repo GitOps.
+
+Secrets del repositorio: `SONAR_TOKEN` (SonarCloud) y `GITOPS_TOKEN` (escritura en el repo GitOps). Sin
+ellos, esos pasos se omiten con una advertencia.
 
 ## Despliegue en Kubernetes (GitOps)
 
@@ -189,4 +193,4 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 | Eventos a otros sistemas (Outbox + RabbitMQ)    | Hecho       |
 | Pipeline CI (GitHub Actions)                    | Hecho       |
 | Manifiestos K8s + GitOps (Argo CD)              | Hecho       |
-| SonarQube                                       | Pendiente   |
+| Análisis estático (SonarCloud + quality gate)   | Hecho       |
