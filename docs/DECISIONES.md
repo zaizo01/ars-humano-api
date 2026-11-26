@@ -222,6 +222,13 @@ principalmente de sintaxis:
    **SonarCloud** (cobertura OpenCover + resultados de pruebas) y el job espera el *quality gate*: si
    falla (cobertura, duplicación, bugs, vulnerabilidades o code smells bloqueantes), falla el pipeline.
    Migraciones generadas quedan excluidas del análisis.
+   - Las actions de terceros se fijan por SHA de commit (un tag puede moverse: ataque de cadena de
+     suministro); Dependabot las mantiene actualizadas.
+   - `appsettings.json` (base de producción) no trae cadena de conexión: si falta el secret, la API no
+     arranca en vez de intentar `postgres/postgres`. La de desarrollo vive en `appsettings.Development.json`.
+   - La regla de credenciales en código (S2068) se ignora solo en `docker-compose.yml` y
+     `appsettings.Development.json`, declarado en el pipeline (versionado y revisable) en lugar de
+     marcarlo a mano en la interfaz de Sonar.
 2. **docker:** construye la imagen, la escanea con Trivy (falla ante vulnerabilidades críticas) y la
    publica en GHCR solo desde `develop`, `main` y tags `v*` (las ramas feature solo validan).
 
