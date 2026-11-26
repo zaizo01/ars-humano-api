@@ -18,9 +18,10 @@ public sealed record ServiceLine(int ServiceTypeId, string? Description, decimal
 /// Agregado raíz. Garantiza: al menos un servicio, montos no negativos,
 /// totales consistentes con el detalle y que una autorización inactiva no se modifica.
 /// </summary>
-public sealed class Authorization : IAuditableEntity
+public sealed class Authorization : IAuditableEntity, IHasDomainEvents
 {
     private readonly List<AuthorizationDetail> _details = [];
+    private readonly List<IDomainEvent> _domainEvents = [];
 
     private Authorization()
     {
@@ -28,7 +29,7 @@ public sealed class Authorization : IAuditableEntity
 
     public Guid Id { get; private set; }
 
-    /// <summary>Número correlativo legible, generado por una secuencia de la base de datos.</summary>
+    /// <summary>Número correlativo legible, tomado de una secuencia de la base de datos.</summary>
     public long Number { get; private set; }
 
     public int AffiliateId { get; private set; }
@@ -58,7 +59,12 @@ public sealed class Authorization : IAuditableEntity
 
     public IReadOnlyCollection<AuthorizationDetail> Details => _details.AsReadOnly();
 
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+
+    public void ClearDomainEvents() => _domainEvents.Clear();
+
     public static Authorization Create(
+        long number,
         AuthorizationParties parties,
         DateOnly serviceDate,
         string? notes,
@@ -66,14 +72,29 @@ public sealed class Authorization : IAuditableEntity
         IAmountDistributionPolicy distributionPolicy,
         string? idempotencyKey = null)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
+
         var authorization = new Authorization
         {
             Id = Guid.CreateVersion7(),
+            Number = number,
             Status = AuthorizationStatus.Active,
             IdempotencyKey = idempotencyKey,
         };
 
         authorization.Apply(parties, serviceDate, notes, services, distributionPolicy);
+        authorization._domainEvents.Add(new AuthorizationCreated(
+            authorization.Id,
+            authorization.Number,
+            authorization.AffiliateId,
+            authorization.ProviderId,
+            authorization.ContractorId,
+            authorization.IntermediaryId,
+            authorization.ServiceDate,
+            authorization.TotalClaimed,
+            authorization.TotalCovered,
+            authorization.TotalCopay));
+
         return authorization;
     }
 
@@ -86,6 +107,7 @@ public sealed class Authorization : IAuditableEntity
     {
         EnsureActive();
         Apply(parties, serviceDate, notes, services, distributionPolicy);
+        _domainEvents.Add(new AuthorizationUpdated(Id, Number, ProviderId, ServiceDate, TotalClaimed, TotalCovered, TotalCopay));
     }
 
     /// <summary>Inactivación lógica: el registro se conserva para fines históricos.</summary>
@@ -94,6 +116,7 @@ public sealed class Authorization : IAuditableEntity
         EnsureActive();
         Status = AuthorizationStatus.Inactive;
         DeactivatedAt = at;
+        _domainEvents.Add(new AuthorizationDeactivated(Id, Number, at));
     }
 
     private void Apply(

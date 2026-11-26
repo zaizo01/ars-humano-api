@@ -9,9 +9,10 @@ public sealed class AuthorizationTests
     private static readonly AuthorizationParties Parties = new(AffiliateId: 1, ProviderId: 1, ContractorId: 1, IntermediaryId: null);
     private static readonly DateOnly ServiceDate = new(2026, 11, 24);
     private static readonly IAmountDistributionPolicy Policy = new PercentageDistributionPolicy(70m);
+    private const long Number = 1001;
 
     private static Authorization CreateAuthorization(params ServiceLine[] services) =>
-        Authorization.Create(Parties, ServiceDate, notes: null, services, Policy);
+        Authorization.Create(Number, Parties, ServiceDate, notes: null, services, Policy);
 
     [Test]
     public void Should_CalculateDetailAndTotals_When_CreatedWithValidServices()
