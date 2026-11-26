@@ -117,6 +117,18 @@ curl "http://localhost:8080/api/v1/authorizations?affiliateId=1&status=Active&pa
 
 Para la página siguiente se repite la consulta agregando `&cursor=23`.
 
+## Eventos (RabbitMQ)
+
+Cada vez que una autorización se crea, se actualiza o se inactiva, la API publica un evento en el exchange
+`health-authorizations.events` (tipo topic). Routing keys: `authorization.created`, `authorization.updated`,
+`authorization.deactivated`.
+
+Con `docker compose up`, la consola de RabbitMQ está en http://localhost:15672 (guest / guest). Para ver
+los eventos: crear una cola, enlazarla al exchange con la routing key `authorization.*` y crear una
+autorización desde la API.
+
+Sin RabbitMQ (`RabbitMq:Enabled=false`, valor por defecto fuera de compose) los eventos se escriben en el log.
+
 ## Pruebas
 
 ```bash
@@ -162,6 +174,6 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 | Actualizar (concurrencia optimista / If-Match)  | Hecho       |
 | Inactivar (borrado lógico)                      | Hecho       |
 | Endpoints de catálogos (con caché)              | Hecho       |
-| Eventos a otros sistemas (Outbox)               | Pendiente   |
+| Eventos a otros sistemas (Outbox + RabbitMQ)    | Hecho       |
 | Pipeline CI (GitHub Actions)                    | Hecho       |
 | SonarQube, manifiestos K8s, GitOps              | Pendiente   |

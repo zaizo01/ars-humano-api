@@ -3,6 +3,7 @@ using HealthAuthorizations.Application.Common;
 using HealthAuthorizations.Domain.Authorizations;
 using HealthAuthorizations.Domain.Catalogs;
 using HealthAuthorizations.Domain.Common;
+using HealthAuthorizations.Infrastructure.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -21,6 +22,9 @@ public sealed class AppDbContext(
     public DbSet<ProviderType> ProviderTypes => Set<ProviderType>();
     public DbSet<ServiceType> ServiceTypes => Set<ServiceType>();
 
+    /// <summary>No se expone en IApplicationDbContext: es un detalle de infraestructura.</summary>
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasSequence<long>(Configurations.AuthorizationConfiguration.NumberSequence).StartsAt(1);
@@ -30,6 +34,7 @@ public sealed class AppDbContext(
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         ApplyAuditInfo();
+        ConvertDomainEventsToOutboxMessages();
 
         try
         {
@@ -42,6 +47,25 @@ public sealed class AppDbContext(
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         {
             throw new ConflictException("Ya existe un registro con los mismos datos únicos.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Patrón Outbox: los eventos se agregan como filas en este mismo SaveChanges, por lo que se
+    /// confirman (o revierten) en la misma transacción que el cambio del agregado.
+    /// </summary>
+    private void ConvertDomainEventsToOutboxMessages()
+    {
+        var now = timeProvider.GetUtcNow();
+        var aggregates = ChangeTracker.Entries<IHasDomainEvents>()
+            .Select(e => e.Entity)
+            .Where(e => e.DomainEvents.Count > 0)
+            .ToList();
+
+        foreach (var aggregate in aggregates)
+        {
+            OutboxMessages.AddRange(aggregate.DomainEvents.Select(e => OutboxMessage.From(e, now)));
+            aggregate.ClearDomainEvents();
         }
     }
 

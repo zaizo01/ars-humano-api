@@ -15,10 +15,23 @@ services:
       timeout: 3s
       retries: 10
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Consola de administración (guest / guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   api:
     build: .
     depends_on:
       db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     ports:
       - "8080:8080"
@@ -26,6 +39,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Database: "Host=db;Port=5432;Database=health_authorizations;Username=postgres;Password=postgres"
       Database__ApplyMigrationsOnStartup: "true"
+      RabbitMq__Enabled: "true"
+      RabbitMq__ConnectionString: "amqp://guest:guest@rabbitmq:5672"
     restart: unless-stopped
 
 volumes:

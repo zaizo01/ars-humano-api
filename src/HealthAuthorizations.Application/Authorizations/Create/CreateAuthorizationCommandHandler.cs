@@ -9,7 +9,8 @@ namespace HealthAuthorizations.Application.Authorizations.Create;
 
 public sealed class CreateAuthorizationCommandHandler(
     IApplicationDbContext db,
-    IAmountDistributionPolicy distributionPolicy)
+    IAmountDistributionPolicy distributionPolicy,
+    IAuthorizationNumberGenerator numberGenerator)
     : IRequestHandler<CreateAuthorizationCommand, AuthorizationResponse>
 {
     public async Task<AuthorizationResponse> Handle(CreateAuthorizationCommand request, CancellationToken cancellationToken)
@@ -25,6 +26,7 @@ public sealed class CreateAuthorizationCommandHandler(
         }
 
         var authorization = Authorization.Create(
+            await numberGenerator.NextAsync(cancellationToken),
             request.ToParties(),
             request.ServiceDate,
             request.Notes,

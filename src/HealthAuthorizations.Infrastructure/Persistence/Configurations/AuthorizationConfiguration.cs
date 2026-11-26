@@ -22,9 +22,13 @@ internal sealed class AuthorizationConfiguration : IEntityTypeConfiguration<Auth
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Id).ValueGeneratedNever();
 
+        // La aplicación toma el número de la secuencia antes de insertar (ver AuthorizationNumberGenerator);
+        // el DEFAULT se conserva para inserciones manuales o scripts.
         builder.Property(a => a.Number)
             .HasDefaultValueSql($"nextval('\"{NumberSequence}\"')")
-            .ValueGeneratedOnAdd();
+            .ValueGeneratedNever();
+
+        builder.Ignore(a => a.DomainEvents);
         builder.HasIndex(a => a.Number).IsUnique();
 
         builder.Property(a => a.Status).HasConversion<short>();
