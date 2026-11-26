@@ -1,6 +1,7 @@
 using HealthAuthorizations.Api.Http;
 using HealthAuthorizations.Application.Authorizations;
 using HealthAuthorizations.Application.Authorizations.Create;
+using HealthAuthorizations.Application.Authorizations.Deactivate;
 using HealthAuthorizations.Application.Authorizations.GetById;
 using HealthAuthorizations.Application.Authorizations.Search;
 using HealthAuthorizations.Application.Authorizations.Update;
@@ -95,7 +96,20 @@ public sealed class AuthorizationsController(ISender sender) : ControllerBase
         return result;
     }
 
-    // Pendiente: DELETE /{id} (inactivación lógica).
+    /// <summary>
+    /// Inactiva una autorización (borrado lógico): deja de poder modificarse pero se conserva para el histórico.
+    /// Es idempotente: inactivar una autorización ya inactiva también responde 204.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Policies.AuthorizationsWrite)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Deactivate(Guid id, CancellationToken cancellationToken)
+    {
+        await sender.Send(new DeactivateAuthorizationCommand(id), cancellationToken);
+        return NoContent();
+    }
 
     private void SetETag(AuthorizationResponse authorization) =>
         Response.Headers[HeaderNames.ETag] = ETag.From(authorization.Version);

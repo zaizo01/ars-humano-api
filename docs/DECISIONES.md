@@ -106,6 +106,16 @@ duplicarlas.
 Trade-off: no permite saltar directo a la página N; para una API consumida por sistemas y pantallas con
 "cargar más" es la opción adecuada.
 
+## 8.2 Inactivación lógica
+
+`DELETE /api/v1/authorizations/{id}` no borra filas: cambia `Status` a `Inactive` y registra
+`DeactivatedAt` (y, por auditoría, `UpdatedAt`/`UpdatedBy`). La autorización y su detalle siguen
+consultables por `GET /{id}` y por la búsqueda con `status=Inactive`; no pueden volver a modificarse (`422`).
+
+Es **idempotente**: inactivar una autorización ya inactiva responde `204` sin cambiar la fecha original,
+de modo que un reintento por timeout no produce un error. No exige `If-Match` porque inactivar es válido
+sea cual sea la versión vigente; la escritura concurrente igual queda protegida por `xmin` (`409`).
+
 ## 9. Manejo de errores
 
 `IExceptionHandler` global → respuestas `ProblemDetails` (RFC 9457) con `traceId` y `correlationId`:
