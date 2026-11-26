@@ -135,6 +135,41 @@ sea cual sea la versión vigente; la escritura concurrente igual queda protegida
 - La paginación usa las mismas reglas y el mismo armado de página (`PaginationRules`, `CursorPage.From`)
   que la búsqueda de autorizaciones.
 
+## 8.4 Eventos hacia otros sistemas: Outbox + RabbitMQ
+
+**Problema:** guardar en PostgreSQL y publicar en un broker son dos operaciones en sistemas distintos;
+no existe una transacción que cubra ambas. Si se guarda y falla la publicación, el evento se pierde; si
+se publica y falla el guardado, se avisa de algo que no existe.
+
+**Solución (patrón Outbox):**
+
+1. El agregado registra eventos de dominio (`AuthorizationCreated`, `AuthorizationUpdated`,
+   `AuthorizationDeactivated`) al cambiar.
+2. `AppDbContext.SaveChangesAsync` los convierte en filas de `OutboxMessages` **en el mismo
+   `SaveChanges`**: el cambio y su evento se confirman o revierten juntos.
+3. `OutboxProcessor` (servicio en segundo plano) lee lotes pendientes con `FOR UPDATE SKIP LOCKED`
+   (seguro con varias réplicas), publica y marca `ProcessedAt`. Si falla, incrementa `Attempts`,
+   guarda el error y reintenta en el siguiente ciclo; tras `MaxAttempts` queda para revisión manual.
+
+**Garantías:** entrega *al menos una vez*. Cada mensaje lleva `MessageId` (el Id de la fila del outbox)
+para que el consumidor descarte duplicados. **La API no depende de RabbitMQ para funcionar**: si el
+broker cae, las autorizaciones se siguen registrando y los eventos salen al recuperarse. Por eso RabbitMQ
+no forma parte del health check `ready`.
+
+**Por qué RabbitMQ:** exchange `topic` durable `health-authorizations.events`; la routing key es el tipo
+de evento (`authorization.created`…), así cada sistema enlaza su cola solo con lo que le interesa
+(`authorization.*`, `authorization.deactivated`). Mensajes persistentes y *publisher confirms* (si el broker
+no confirma, el outbox reintenta). Kafka sería excesivo para este volumen y no se necesita replay de un log.
+
+**Extensibilidad:** el procesador publica a través de `IEventPublisher`. Una integración nueva (otro broker,
+webhooks, Azure Service Bus) es otra implementación, sin tocar dominio ni casos de uso. Sin broker
+(`RabbitMq:Enabled=false`) se usa `LoggingEventPublisher`, que registra los eventos en el log.
+
+**Número de autorización:** pasó a tomarse de la secuencia *antes* de insertar
+(`IAuthorizationNumberGenerator`) para que `authorization.created` ya lo incluya. `nextval` es atómico, así
+que sigue siendo seguro ante concurrencia; puede dejar huecos si una solicitud falla, aceptable para un
+correlativo.
+
 ## 9. Manejo de errores
 
 `IExceptionHandler` global → respuestas `ProblemDetails` (RFC 9457) con `traceId` y `correlationId`:
