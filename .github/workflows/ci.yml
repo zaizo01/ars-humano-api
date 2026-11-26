@@ -24,8 +24,12 @@ jobs:
   build-test:
     name: Build y pruebas
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # SonarCloud usa el historial para detectar código nuevo
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -35,6 +39,26 @@ jobs:
 
       - name: Restore
         run: dotnet restore
+
+      # SonarCloud envuelve build + pruebas (begin/end). Sin el secret SONAR_TOKEN se omite.
+      - name: SonarCloud - inicio
+        if: env.SONAR_TOKEN != ''
+        run: |
+          dotnet tool install -g dotnet-sonarscanner
+          dotnet sonarscanner begin \
+            /k:"${{ vars.SONAR_PROJECT_KEY || 'zaizo01_ars-humano-api' }}" \
+            /o:"${{ vars.SONAR_ORGANIZATION || 'zaizo01' }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
+            /d:sonar.cs.vstest.reportsPaths="TestResults/**/*.trx" \
+            /d:sonar.exclusions="**/Migrations/**" \
+            /d:sonar.coverage.exclusions="**/Program.cs,tests/**" \
+            /d:sonar.qualitygate.wait=true
+
+      - name: Sin SonarCloud
+        if: env.SONAR_TOKEN == ''
+        run: echo "::warning::Falta el secret SONAR_TOKEN; se omite el análisis de SonarCloud"
 
       - name: Build
         run: dotnet build -c Release --no-restore
@@ -55,6 +79,10 @@ jobs:
           --collect:"XPlat Code Coverage"
           --results-directory ./TestResults
           --logger trx
+
+      - name: SonarCloud - fin y quality gate
+        if: env.SONAR_TOKEN != ''
+        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
 
       - name: Reporte de cobertura
         if: always()
