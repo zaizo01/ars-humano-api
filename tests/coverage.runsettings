@@ -4,7 +4,8 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
-          <Format>cobertura</Format>
+          <!-- cobertura: reporte del pipeline. opencover: formato que lee SonarCloud. -->
+          <Format>cobertura,opencover</Format>
           <!-- Código generado o de arranque que no aporta a la métrica -->
           <ExcludeByFile>**/Migrations/*.cs,**/Program.cs</ExcludeByFile>
           <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
