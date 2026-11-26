@@ -1,6 +1,8 @@
 using System.Text;
 using HealthAuthorizations.Application.Abstractions;
 using HealthAuthorizations.Infrastructure.Auth;
+using HealthAuthorizations.Infrastructure.Messaging;
+using HealthAuthorizations.Infrastructure.Outbox;
 using HealthAuthorizations.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -24,8 +26,27 @@ public static class DependencyInjection
 
         AddPersistence(services, configuration);
         AddSecurity(services, configuration);
+        AddMessaging(services, configuration);
 
         return services;
+    }
+
+    private static void AddMessaging(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<OutboxOptions>(configuration.GetSection(OutboxOptions.SectionName));
+        services.Configure<RabbitMqOptions>(configuration.GetSection(RabbitMqOptions.SectionName));
+
+        var rabbitMq = configuration.GetSection(RabbitMqOptions.SectionName).Get<RabbitMqOptions>() ?? new RabbitMqOptions();
+        if (rabbitMq.Enabled)
+        {
+            services.AddSingleton<IEventPublisher, RabbitMqEventPublisher>();
+        }
+        else
+        {
+            services.AddSingleton<IEventPublisher, LoggingEventPublisher>();
+        }
+
+        services.AddHostedService<OutboxProcessor>();
     }
 
     private static void AddPersistence(IServiceCollection services, IConfiguration configuration)
@@ -38,6 +59,7 @@ public static class DependencyInjection
             .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IAuthorizationNumberGenerator, AuthorizationNumberGenerator>();
     }
 
     private static void AddSecurity(IServiceCollection services, IConfiguration configuration)
