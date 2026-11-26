@@ -116,6 +116,25 @@ Es **idempotente**: inactivar una autorización ya inactiva responde `204` sin c
 de modo que un reintento por timeout no produce un error. No exige `If-Match` porque inactivar es válido
 sea cual sea la versión vigente; la escritura concurrente igual queda protegida por `xmin` (`409`).
 
+## 8.3 Catálogos
+
+`/api/v1/catalogs/*`, solo lectura, accesible para ambos roles. Se tratan distinto según su tamaño:
+
+| Catálogo | Volumen | Estrategia |
+|---|---|---|
+| Tipos de prestador, tipos de servicio, intermediarios, contratantes | Pequeño, cambia poco | Lista completa **cacheada** 10 min |
+| Afiliados, prestadores | Grande, crece | **Búsqueda paginada** por cursor (`Id`), sin caché |
+
+- Caché con `HybridCache` (.NET 9+): protege contra la "estampida" (si llegan muchas solicitudes con la
+  caché vacía, solo una consulta la base) y, registrando un `IDistributedCache` (Redis), pasa a tener un
+  segundo nivel compartido entre réplicas **sin cambiar los handlers**. En este alcance los catálogos solo
+  cambian por migraciones, así que la expiración por tiempo es suficiente; si se agrega mantenimiento de
+  catálogos, se invalida por la etiqueta `catalogs`.
+- Búsqueda de afiliados: coincidencia exacta por número de afiliado o documento, parcial por nombre.
+  Prestadores: exacta por código o RNC, parcial por nombre; filtro por tipo de prestador.
+- La paginación usa las mismas reglas y el mismo armado de página (`PaginationRules`, `CursorPage.From`)
+  que la búsqueda de autorizaciones.
+
 ## 9. Manejo de errores
 
 `IExceptionHandler` global → respuestas `ProblemDetails` (RFC 9457) con `traceId` y `correlationId`:

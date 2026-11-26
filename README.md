@@ -45,6 +45,19 @@ curl -X POST http://localhost:8080/api/v1/auth/token \
 
 Usar el `accessToken` como `Authorization: Bearer <token>`.
 
+## Catálogos
+
+Para conocer los IDs válidos al crear autorizaciones:
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /api/v1/catalogs/service-types` | Tipos de servicio |
+| `GET /api/v1/catalogs/provider-types` | Tipos de prestador |
+| `GET /api/v1/catalogs/intermediaries` | Intermediarios |
+| `GET /api/v1/catalogs/contractors` | Contratantes |
+| `GET /api/v1/catalogs/affiliates?search=AF-0001` | Afiliados (búsqueda por número, documento o nombre; paginado) |
+| `GET /api/v1/catalogs/providers?providerTypeId=3` | Prestadores (búsqueda por código, RNC o nombre; paginado) |
+
 ## Ejemplo: crear autorización
 
 ```bash
@@ -148,7 +161,7 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 | Búsqueda paginada con filtros                   | Hecho       |
 | Actualizar (concurrencia optimista / If-Match)  | Hecho       |
 | Inactivar (borrado lógico)                      | Hecho       |
-| Endpoints de catálogos                          | Pendiente   |
+| Endpoints de catálogos (con caché)              | Hecho       |
 | Eventos a otros sistemas (Outbox)               | Pendiente   |
 | Pipeline CI (GitHub Actions)                    | Hecho       |
 | SonarQube, manifiestos K8s, GitOps              | Pendiente   |
