@@ -213,6 +213,28 @@ quality gates, publicación de imagen) son equivalentes y trasladables a Azure D
 
 Dependabot propone semanalmente actualizaciones de NuGet, actions e imagen base contra `develop`.
 
+3. **update-gitops:** no despliega en el clúster; cambia la versión declarada en el repositorio
+   [ars-humano-gitops](https://github.com/zaizo01/ars-humano-gitops) y Argo CD sincroniza.
+   `develop` → commit directo en el overlay de dev; tag `v*` → pull request al overlay de prod (requiere
+   aprobación). Usa el secret `GITOPS_TOKEN`; si no existe, el paso se omite con una advertencia.
+
+## 12.1 Despliegue: Kubernetes + GitOps
+
+Los manifiestos viven en un repositorio separado (`ars-humano-gitops`), de modo que el despliegue se
+administra independientemente del código: el historial de ese repo es la auditoría de qué versión corre
+en cada entorno, y un rollback es revertir un commit. El pipeline nunca tiene credenciales del clúster.
+
+- **Kustomize** con `base` + overlays `dev` y `prod`.
+- **Migraciones como Job** (`--migrate`, misma imagen) en hook `PreSync` de Argo CD: con varias réplicas,
+  migrar al arrancar provocaría migraciones simultáneas. En Kubernetes `ApplyMigrationsOnStartup=false`.
+- Alta disponibilidad (rolling update sin pérdida de capacidad, PDB, reparto por zona/nodo, HPA),
+  contenedor endurecido (Pod Security `restricted`, solo lectura, no root) y secretos de producción vía
+  External Secrets (Azure Key Vault).
+- El repositorio GitOps usa solo `main` con pull requests (no Gitflow): representa el estado de los
+  entornos, no un ciclo de releases de código.
+
+Detalle completo en el README de ese repositorio.
+
 ## 13. Pruebas
 
 Convenciones: **NUnit**, patrón **AAA** (`// Arrange`, `// Act`, `// Assert`), un escenario por prueba y

@@ -142,6 +142,18 @@ GitHub Actions (`.github/workflows/ci.yml`) en cada push y pull request:
 build → vulnerabilidades de paquetes → pruebas con cobertura → imagen Docker → escaneo Trivy →
 publicación en `ghcr.io` (solo `develop`, `main` y tags `v*`).
 
+## Despliegue en Kubernetes (GitOps)
+
+Los manifiestos de Kubernetes y la configuración de Argo CD están en el repositorio
+[ars-humano-gitops](https://github.com/zaizo01/ars-humano-gitops). El pipeline de este repositorio
+actualiza la versión de la imagen allí (dev automático, prod por pull request) y Argo CD la despliega.
+
+Para ejecutar solo las migraciones (lo que hace el Job de Kubernetes):
+
+```bash
+dotnet run --project src/HealthAuthorizations.Api -- --migrate
+```
+
 ## Estructura
 
 ```
@@ -176,4 +188,5 @@ dotnet ef migrations script --idempotent -p src/HealthAuthorizations.Infrastruct
 | Endpoints de catálogos (con caché)              | Hecho       |
 | Eventos a otros sistemas (Outbox + RabbitMQ)    | Hecho       |
 | Pipeline CI (GitHub Actions)                    | Hecho       |
-| SonarQube, manifiestos K8s, GitOps              | Pendiente   |
+| Manifiestos K8s + GitOps (Argo CD)              | Hecho       |
+| SonarQube                                       | Pendiente   |
