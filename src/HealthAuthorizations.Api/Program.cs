@@ -40,6 +40,14 @@ try
     app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
     app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") });
 
+    // `--migrate`: aplica las migraciones y termina. En Kubernetes corre como Job antes del despliegue,
+    // así varias réplicas nunca migran al mismo tiempo.
+    if (args.Contains("--migrate"))
+    {
+        await app.ApplyMigrationsAsync();
+        return;
+    }
+
     if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
     {
         await app.ApplyMigrationsAsync();

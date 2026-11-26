@@ -127,3 +127,64 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
+
+  # GitOps: el pipeline no despliega en el clúster; solo cambia la versión declarada en el repo GitOps
+  # y Argo CD sincroniza. develop → dev (commit directo); tag v* → prod (pull request para aprobar).
+  update-gitops:
+    name: Actualizar repo GitOps
+    needs: docker
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    env:
+      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+      GITOPS_REPO: ${{ vars.GITOPS_REPO || 'zaizo01/ars-humano-gitops' }}
+      APP_PATH: apps/health-authorizations-api/overlays
+    steps:
+      - name: Verificar token
+        id: check
+        run: |
+          if [ -z "$GITOPS_TOKEN" ]; then
+            echo "::warning::Falta el secret GITOPS_TOKEN: se omite la actualización del repo GitOps"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != 'true'
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          token: ${{ env.GITOPS_TOKEN }}
+          path: gitops
+
+      - name: Configurar autor
+        if: steps.check.outputs.skip != 'true'
+        working-directory: gitops
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Dev - actualizar imagen
+        if: steps.check.outputs.skip != 'true' && github.ref == 'refs/heads/develop'
+        working-directory: gitops
+        run: |
+          TAG="sha-${GITHUB_SHA::7}"
+          (cd "$APP_PATH/dev" && kustomize edit set image health-authorizations-api=${{ env.IMAGE_NAME }}:$TAG)
+          git add -A
+          git diff --cached --quiet && { echo "Sin cambios"; exit 0; }
+          git commit -m "chore(dev): deploy api $TAG"
+          git push
+
+      - name: Prod - abrir pull request
+        if: steps.check.outputs.skip != 'true' && startsWith(github.ref, 'refs/tags/v')
+        working-directory: gitops
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BRANCH="release/api-$VERSION"
+          git switch -c "$BRANCH"
+          (cd "$APP_PATH/prod" && kustomize edit set image health-authorizations-api=${{ env.IMAGE_NAME }}:$VERSION)
+          git commit -am "chore(prod): deploy api $VERSION"
+          git push -u origin "$BRANCH"
+          gh pr create --repo "$GITOPS_REPO" --base main --head "$BRANCH" \
+            --title "chore(prod): deploy api $VERSION" \
+            --body "Despliegue a producción de la versión $VERSION de la API (generado por el pipeline)."
