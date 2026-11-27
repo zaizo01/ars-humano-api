@@ -3,6 +3,15 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.0.3] - 2026-11-27
+
+### Mejorado
+- La documentación OpenAPI (Scalar) incluye la descripción de cada endpoint.
+
+### Interno
+- Comentarios de código simplificados.
+- Se elimina `public partial class Program`, innecesario desde .NET 10.
+
 ## [1.0.2] - 2026-11-27
 
 ### Documentación
@@ -49,6 +58,7 @@ Primera versión.
 - Despliegue GitOps: manifiestos Kubernetes (Kustomize) y Argo CD en
   [ars-humano-gitops](https://github.com/zaizo01/ars-humano-gitops); migraciones como Job `--migrate`.
 
+[1.0.3]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.3
 [1.0.2]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.2
 [1.0.1]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.1
 [1.0.0]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.0
