@@ -226,6 +226,8 @@ jobs:
           FILE="$APP_PATH/prod/kustomization.yaml"
           sed -i -E "s|^([[:space:]]*newTag:).*|\1 $VERSION|" "$FILE"
           grep -q "newTag: $VERSION" "$FILE" || { echo "::error::No se pudo actualizar newTag"; exit 1; }
+          # Idempotente: si prod ya declara esta versión (re-ejecución del pipeline), no hay nada que proponer.
+          git diff --quiet && { echo "::notice::prod ya declara la versión $VERSION"; exit 0; }
           git commit -am "chore(prod): deploy api $VERSION"
           git push -u origin "$BRANCH"
           gh pr create --repo "$GITOPS_REPO" --base main --head "$BRANCH" \
