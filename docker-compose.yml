@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: health_authorizations
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${DB_PORT:-5432}:5432"   # DB_PORT permite otro puerto si 5432 está ocupado
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d health_authorizations"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"             # AMQP
+      - "${RABBITMQ_UI_PORT:-15672}:15672"        # Consola de administración (guest / guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Database: "Host=db;Port=5432;Database=health_authorizations;Username=postgres;Password=postgres"
+      Database__ApplyMigrationsOnStartup: "true"
+      RabbitMq__Enabled: "true"
+      RabbitMq__ConnectionString: "amqp://guest:guest@rabbitmq:5672"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
