@@ -2,10 +2,6 @@ using Serilog.Context;
 
 namespace HealthAuthorizations.Api.Middleware;
 
-/// <summary>
-/// Propaga (o genera) el header X-Correlation-Id y lo agrega a todos los logs
-/// del request, para poder rastrear un incidente de punta a punta.
-/// </summary>
 internal sealed class CorrelationIdMiddleware(RequestDelegate next)
 {
     public const string HeaderName = "X-Correlation-Id";

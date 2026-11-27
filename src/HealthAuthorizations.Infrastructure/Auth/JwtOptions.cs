@@ -7,13 +7,12 @@ public sealed class JwtOptions
     public required string Issuer { get; init; }
     public required string Audience { get; init; }
 
-    /// <summary>Clave simétrica (mín. 32 caracteres). En producción viene de un secreto, nunca del repositorio.</summary>
+    // Mínimo 32 caracteres.
     public required string SigningKey { get; init; }
 
     public int ExpirationMinutes { get; init; } = 60;
 }
 
-/// <summary>Usuarios de demostración para emitir tokens en entornos locales.</summary>
 public sealed class DemoUserOptions
 {
     public const string SectionName = "Auth:DemoUsers";

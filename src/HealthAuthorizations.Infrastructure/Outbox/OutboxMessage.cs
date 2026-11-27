@@ -4,10 +4,6 @@ using HealthAuthorizations.Domain.Common;
 
 namespace HealthAuthorizations.Infrastructure.Outbox;
 
-/// <summary>
-/// Evento pendiente de publicar. Se inserta en la misma transacción que el cambio que lo origina,
-/// así nunca se pierde un evento ni se publica uno de un cambio que no se guardó.
-/// </summary>
 public sealed class OutboxMessage
 {
     public const int MaxErrorLength = 2000;
@@ -20,7 +16,6 @@ public sealed class OutboxMessage
 
     public Guid Id { get; private set; }
 
-    /// <summary>Nombre público del evento, usado también como routing key (ej. <c>authorization.created</c>).</summary>
     public string Type { get; private set; } = null!;
 
     public string Payload { get; private set; } = null!;

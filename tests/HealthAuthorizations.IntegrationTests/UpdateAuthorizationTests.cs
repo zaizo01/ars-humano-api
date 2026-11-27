@@ -5,7 +5,7 @@ using static HealthAuthorizations.IntegrationTests.TestApi;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Usa el afiliado 2, que no participa en las demás pruebas.</summary>
+// Afiliado 2: no lo usa ninguna otra prueba.
 [TestFixture]
 public sealed class UpdateAuthorizationTests
 {

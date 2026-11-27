@@ -6,7 +6,6 @@ using Testcontainers.RabbitMq;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Publica contra un RabbitMQ real en contenedor y lo consume como lo haría otro sistema.</summary>
 [TestFixture]
 public sealed class RabbitMqEventPublisherTests
 {

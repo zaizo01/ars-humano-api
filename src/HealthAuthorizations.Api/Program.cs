@@ -36,12 +36,11 @@ try
 
     app.MapControllers();
 
-    // live: el proceso responde. ready: además sus dependencias (PostgreSQL) están disponibles.
+    // ready además revisa PostgreSQL.
     app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
     app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = c => c.Tags.Contains("ready") });
 
-    // `--migrate`: aplica las migraciones y termina. En Kubernetes corre como Job antes del despliegue,
-    // así varias réplicas nunca migran al mismo tiempo.
+    // Job de migración en Kubernetes: así las réplicas no migran a la vez.
     if (args.Contains("--migrate"))
     {
         await app.ApplyMigrationsAsync();
@@ -64,6 +63,3 @@ finally
 {
     await Log.CloseAndFlushAsync();
 }
-
-// Expuesto para WebApplicationFactory en las pruebas de integración.
-public partial class Program;

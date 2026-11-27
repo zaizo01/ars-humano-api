@@ -8,19 +8,14 @@ public sealed class RabbitMqOptions
 {
     public const string SectionName = "RabbitMq";
 
-    /// <summary>false = los eventos solo se registran en el log (desarrollo sin broker).</summary>
     public bool Enabled { get; init; }
 
     public string ConnectionString { get; init; } = "amqp://guest:guest@localhost:5672";
 
-    /// <summary>Exchange tipo topic: cada consumidor enlaza su cola con los eventos que le interesan (ej. <c>authorization.*</c>).</summary>
     public string Exchange { get; init; } = "health-authorizations.events";
 }
 
-/// <summary>
-/// Publica en un exchange topic durable, con mensajes persistentes y confirmación del broker
-/// (publisher confirms): si RabbitMQ no confirma, se lanza una excepción y el outbox reintenta.
-/// </summary>
+// Con publisher confirms: si el broker no confirma se lanza excepción y el outbox reintenta.
 public sealed class RabbitMqEventPublisher(IOptions<RabbitMqOptions> options) : IEventPublisher, IAsyncDisposable
 {
     private readonly RabbitMqOptions _options = options.Value;

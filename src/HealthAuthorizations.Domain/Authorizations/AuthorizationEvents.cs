@@ -2,9 +2,7 @@ using HealthAuthorizations.Domain.Common;
 
 namespace HealthAuthorizations.Domain.Authorizations;
 
-// Contratos de los eventos que se publican hacia otros sistemas. Llevan los datos que un
-// consumidor típico necesita (facturación, notificaciones, analítica) sin obligarlo a
-// consultar la API; cambiar su forma es un cambio de contrato.
+// Se publican tal cual: cambiar un campo rompe a los consumidores.
 
 public sealed record AuthorizationCreated(
     Guid AuthorizationId,

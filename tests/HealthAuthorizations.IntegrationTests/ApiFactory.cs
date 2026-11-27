@@ -8,7 +8,6 @@ using Testcontainers.PostgreSql;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Levanta la API contra un PostgreSQL real en contenedor (requiere Docker).</summary>
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly PostgreSqlContainer _db = new PostgreSqlBuilder("postgres:17-alpine").Build();
@@ -38,7 +37,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     }
 }
 
-/// <summary>Una sola API + base de datos para todas las pruebas del ensamblado.</summary>
+// Una sola API y base para todo el ensamblado.
 [SetUpFixture]
 public sealed class IntegrationTestSetup
 {

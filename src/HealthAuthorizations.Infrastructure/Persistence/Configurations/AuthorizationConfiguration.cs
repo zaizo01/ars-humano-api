@@ -22,8 +22,7 @@ internal sealed class AuthorizationConfiguration : IEntityTypeConfiguration<Auth
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Id).ValueGeneratedNever();
 
-        // La aplicación toma el número de la secuencia antes de insertar (ver AuthorizationNumberGenerator);
-        // el DEFAULT se conserva para inserciones manuales o scripts.
+        // La app ya trae el número (AuthorizationNumberGenerator); el DEFAULT queda para scripts.
         builder.Property(a => a.Number)
             .HasDefaultValueSql($"nextval('\"{NumberSequence}\"')")
             .ValueGeneratedNever();
@@ -41,7 +40,6 @@ internal sealed class AuthorizationConfiguration : IEntityTypeConfiguration<Auth
         builder.Property(a => a.TotalCovered).HasPrecision(18, 2);
         builder.Property(a => a.TotalCopay).HasPrecision(18, 2);
 
-        // Concurrencia optimista usando la columna de sistema xmin de PostgreSQL.
         builder.Property(a => a.Version).IsRowVersion();
 
         builder.HasOne<Affiliate>().WithMany().HasForeignKey(a => a.AffiliateId).OnDelete(DeleteBehavior.Restrict);
@@ -55,7 +53,6 @@ internal sealed class AuthorizationConfiguration : IEntityTypeConfiguration<Auth
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(a => a.Details).UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        // Índices para los criterios de búsqueda frecuentes.
         builder.HasIndex(a => a.IdempotencyKey).IsUnique().HasFilter("\"IdempotencyKey\" IS NOT NULL");
         builder.HasIndex(a => new { a.AffiliateId, a.ServiceDate });
         builder.HasIndex(a => new { a.ProviderId, a.ServiceDate });
@@ -84,7 +81,7 @@ internal sealed class AuthorizationDetailConfiguration : IEntityTypeConfiguratio
         builder.Property(d => d.CopayAmount).HasPrecision(18, 2);
 
         builder.HasOne<ServiceType>().WithMany().HasForeignKey(d => d.ServiceTypeId).OnDelete(DeleteBehavior.Restrict);
-        // Cubre el filtro de búsqueda "autorizaciones que incluyen el tipo de servicio X" (EXISTS por AuthorizationId).
+        // Para el filtro por tipo de servicio (EXISTS).
         builder.HasIndex(d => new { d.ServiceTypeId, d.AuthorizationId });
     }
 }

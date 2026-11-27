@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 
 namespace HealthAuthorizations.Application.Behaviors;
 
-/// <summary>Registra duración de cada request y advierte cuando es lento.</summary>
 public sealed class LoggingBehavior<TRequest, TResponse>(ILogger<LoggingBehavior<TRequest, TResponse>> logger)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull

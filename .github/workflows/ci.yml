@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # SonarCloud usa el historial para detectar código nuevo
+          fetch-depth: 0   # Sonar necesita el historial
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -40,9 +40,7 @@ jobs:
       - name: Restore
         run: dotnet restore
 
-      # SonarCloud envuelve build + pruebas (begin/end). Sin el secret SONAR_TOKEN se omite.
-      # Única excepción (S2068, credenciales en código): docker-compose.yml y appsettings.Development.json,
-      # que contienen a propósito credenciales de contenedores locales. Producción no tiene ninguna.
+      # S2068 se ignora solo en los archivos con credenciales de desarrollo local.
       - name: SonarCloud - inicio
         if: env.SONAR_TOKEN != ''
         run: |
@@ -80,7 +78,6 @@ jobs:
             exit 1
           fi
 
-      # Las pruebas de integración usan Testcontainers (Docker ya está disponible en ubuntu-latest).
       - name: Pruebas
         run: >
           dotnet test -c Release --no-build
@@ -146,7 +143,6 @@ jobs:
             --severity CRITICAL --ignore-unfixed --exit-code 1 --no-progress \
             ${{ env.IMAGE_NAME }}:sha-$(git rev-parse --short HEAD)
 
-      # Solo se publica desde ramas de integración y tags; las features solo validan.
       - name: Login a GHCR
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
@@ -165,8 +161,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
 
-  # GitOps: el pipeline no despliega en el clúster; solo cambia la versión declarada en el repo GitOps
-  # y Argo CD sincroniza. develop → dev (commit directo); tag v* → prod (pull request para aprobar).
+  # develop → commit en dev; tag v* → PR a prod.
   update-gitops:
     name: Actualizar repo GitOps
     needs: docker
@@ -192,8 +187,7 @@ jobs:
           token: ${{ env.GITOPS_TOKEN }}
           path: gitops
 
-      # Solo se reemplaza la línea newTag (kustomize edit reescribe todo el archivo y ensucia el diff,
-      # que en GitOps es la auditoría del despliegue).
+      # sed y no kustomize edit: este último reescribe todo el archivo.
       - name: Configurar autor
         if: steps.check.outputs.skip != 'true'
         working-directory: gitops
@@ -226,7 +220,7 @@ jobs:
           FILE="$APP_PATH/prod/kustomization.yaml"
           sed -i -E "s|^([[:space:]]*newTag:).*|\1 $VERSION|" "$FILE"
           grep -q "newTag: $VERSION" "$FILE" || { echo "::error::No se pudo actualizar newTag"; exit 1; }
-          # Idempotente: si prod ya declara esta versión (re-ejecución del pipeline), no hay nada que proponer.
+          # Re-ejecución: prod ya tiene esta versión.
           git diff --quiet && { echo "::notice::prod ya declara la versión $VERSION"; exit 0; }
           git commit -am "chore(prod): deploy api $VERSION"
           git push -u origin "$BRANCH"

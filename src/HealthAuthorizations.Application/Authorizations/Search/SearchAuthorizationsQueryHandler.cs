@@ -6,12 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthAuthorizations.Application.Authorizations.Search;
 
-/// <summary>
-/// Paginación por cursor (keyset) sobre <c>Number</c> descendente (más recientes primero):
-/// <c>WHERE "Number" &lt; @cursor ORDER BY "Number" DESC LIMIT n+1</c>.
-/// A diferencia de OFFSET, el costo no crece con la profundidad de la página y no se
-/// saltan ni duplican filas cuando se insertan registros mientras el cliente pagina.
-/// </summary>
+// Keyset sobre Number desc. Con OFFSET el costo crece con cada página y se pueden saltar filas
+// si entran registros nuevos mientras se pagina.
 public sealed class SearchAuthorizationsQueryHandler(IApplicationDbContext db)
     : IRequestHandler<SearchAuthorizationsQuery, CursorPage<AuthorizationSummaryResponse>>
 {
@@ -19,7 +15,7 @@ public sealed class SearchAuthorizationsQueryHandler(IApplicationDbContext db)
     {
         var authorizations = ApplyFilters(db.Authorizations.AsNoTracking(), request);
 
-        // Se pide un elemento extra solo para saber si existe una página siguiente.
+        // +1 para saber si hay otra página.
         var rows = await (
                 from a in authorizations
                 join affiliate in db.Affiliates on a.AffiliateId equals affiliate.Id
