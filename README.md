@@ -19,6 +19,9 @@ docker compose up -d --build
 
 Las migraciones y los datos iniciales de catálogos se aplican al arrancar.
 
+Si algún puerto ya está ocupado en tu máquina, se puede cambiar sin editar el archivo con las variables
+`API_PORT`, `DB_PORT`, `RABBITMQ_PORT` y `RABBITMQ_UI_PORT` (ej. `DB_PORT=55432 docker compose up -d`).
+
 ## Ejecución local sin Docker para la API
 
 Requisitos: .NET SDK 10 y un PostgreSQL accesible (puede ser solo el de compose: `docker compose up -d db`).
