@@ -15,9 +15,6 @@ public sealed class AuthorizationEventsTests
     [Test]
     public void Should_RaiseCreatedEventWithNumberAndAmounts_When_AuthorizationIsCreated()
     {
-        // Arrange
-        // (datos de la autorización definidos en la clase)
-
         // Act
         var authorization = CreateAuthorization();
 

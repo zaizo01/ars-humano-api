@@ -4,11 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthAuthorizations.Infrastructure.Persistence;
 
-/// <summary>
-/// Toma el siguiente valor de la secuencia de PostgreSQL. nextval es atómico y no participa de
-/// transacciones, así que dos solicitudes simultáneas nunca obtienen el mismo número
-/// (puede haber huecos si una solicitud falla, lo cual es aceptable para un correlativo).
-/// </summary>
+// nextval no participa de la transacción: nunca repite, pero deja huecos si algo falla. Aceptable.
 internal sealed class AuthorizationNumberGenerator(AppDbContext db) : IAuthorizationNumberGenerator
 {
     public Task<long> NextAsync(CancellationToken cancellationToken) =>

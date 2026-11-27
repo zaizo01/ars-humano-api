@@ -22,7 +22,6 @@ public sealed class AppDbContext(
     public DbSet<ProviderType> ProviderTypes => Set<ProviderType>();
     public DbSet<ServiceType> ServiceTypes => Set<ServiceType>();
 
-    /// <summary>No se expone en IApplicationDbContext: es un detalle de infraestructura.</summary>
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -50,10 +49,7 @@ public sealed class AppDbContext(
         }
     }
 
-    /// <summary>
-    /// Patrón Outbox: los eventos se agregan como filas en este mismo SaveChanges, por lo que se
-    /// confirman (o revierten) en la misma transacción que el cambio del agregado.
-    /// </summary>
+    // Outbox: los eventos se guardan en la misma transacción que el cambio.
     private void ConvertDomainEventsToOutboxMessages()
     {
         var now = timeProvider.GetUtcNow();

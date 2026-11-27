@@ -17,9 +17,6 @@ public sealed class PercentageDistributionPolicyTests
     [TestCase(0, 0, 0)]
     public void Should_SplitSeventyThirtyAndAddUp_When_ClaimedAmountIsValid(decimal claimed, decimal expectedCovered, decimal expectedCopay)
     {
-        // Arrange
-        // (política 70/30 creada en SetUp)
-
         // Act
         var result = _policy.Distribute(claimed);
 
@@ -49,9 +46,6 @@ public sealed class PercentageDistributionPolicyTests
     [TestCase(100.01)]
     public void Should_ThrowArgumentOutOfRange_When_PercentageIsOutOfRange(decimal percentage)
     {
-        // Arrange
-        // (porcentaje inválido recibido por parámetro)
-
         // Act
         var exception = Assert.Throws<ArgumentOutOfRangeException>(() => _ = new PercentageDistributionPolicy(percentage));
 

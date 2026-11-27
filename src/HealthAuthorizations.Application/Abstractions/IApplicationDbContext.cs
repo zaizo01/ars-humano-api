@@ -4,10 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthAuthorizations.Application.Abstractions;
 
-/// <summary>
-/// Puerto de persistencia. Se expone DbSet directamente (sin repositorio genérico)
-/// para que las consultas CQRS puedan proyectar y paginar en SQL.
-/// </summary>
+// DbSet directo (sin repositorio genérico) para proyectar y paginar en SQL.
 public interface IApplicationDbContext
 {
     DbSet<Authorization> Authorizations { get; }

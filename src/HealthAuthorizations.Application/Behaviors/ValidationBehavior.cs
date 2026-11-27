@@ -3,7 +3,6 @@ using MediatR;
 
 namespace HealthAuthorizations.Application.Behaviors;
 
-/// <summary>Ejecuta todos los validadores del request antes de llegar al handler.</summary>
 public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
@@ -18,7 +17,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidat
         var context = new ValidationContext<TRequest>(request);
         var failures = new List<FluentValidation.Results.ValidationFailure>();
 
-        // Secuencial a propósito: los validadores asíncronos comparten el DbContext (no es thread-safe).
+        // Secuencial: los validadores async comparten el DbContext, que no es thread-safe.
         foreach (var validator in validators)
         {
             var result = await validator.ValidateAsync(context, cancellationToken);

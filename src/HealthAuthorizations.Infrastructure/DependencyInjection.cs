@@ -95,7 +95,6 @@ public static class DependencyInjection
             .AddPolicy(Policies.AuthorizationsWrite, p => p.RequireRole(Roles.Operator));
     }
 
-    /// <summary>Aplica migraciones pendientes. Pensado para entornos locales / docker compose.</summary>
     public static async Task ApplyMigrationsAsync(this IHost host)
     {
         await using var scope = host.Services.CreateAsyncScope();

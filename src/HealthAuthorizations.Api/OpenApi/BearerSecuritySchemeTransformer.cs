@@ -3,7 +3,6 @@ using Microsoft.OpenApi;
 
 namespace HealthAuthorizations.Api.OpenApi;
 
-/// <summary>Declara el esquema Bearer (JWT) en el documento OpenAPI para probar desde Scalar.</summary>
 internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
 {
     private const string SchemeName = "Bearer";

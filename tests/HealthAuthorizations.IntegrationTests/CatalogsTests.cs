@@ -6,7 +6,6 @@ using static HealthAuthorizations.IntegrationTests.TestApi;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Verifica los catálogos contra los datos iniciales de la migración.</summary>
 [TestFixture]
 public sealed class CatalogsTests
 {

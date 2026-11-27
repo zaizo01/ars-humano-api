@@ -4,7 +4,6 @@ using MediatR;
 
 namespace HealthAuthorizations.Application.Authorizations.Search;
 
-/// <summary>Búsqueda de autorizaciones. Todos los filtros son opcionales y se combinan con AND.</summary>
 public sealed record SearchAuthorizationsQuery : IRequest<CursorPage<AuthorizationSummaryResponse>>
 {
     public const int DefaultPageSize = PaginationRules.DefaultPageSize;
@@ -20,13 +19,11 @@ public sealed record SearchAuthorizationsQuery : IRequest<CursorPage<Authorizati
     public DateOnly? FromDate { get; init; }
     public DateOnly? ToDate { get; init; }
 
-    /// <summary>Valor <c>nextCursor</c> de la página anterior.</summary>
     public long? Cursor { get; init; }
 
     public int PageSize { get; init; } = DefaultPageSize;
 }
 
-/// <summary>Vista resumida para listados: sin el detalle de servicios, para que la respuesta sea liviana.</summary>
 public sealed record AuthorizationSummaryResponse
 {
     public Guid Id { get; init; }

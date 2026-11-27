@@ -4,7 +4,6 @@ using HealthAuthorizations.Infrastructure.Messaging;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Reemplaza al broker en las pruebas de la API: guarda lo que el outbox publica.</summary>
 public sealed class CapturingEventPublisher : IEventPublisher
 {
     private readonly ConcurrentQueue<IntegrationMessage> _messages = new();
@@ -18,7 +17,6 @@ public sealed class CapturingEventPublisher : IEventPublisher
     public IReadOnlyList<IntegrationMessage> For(Guid authorizationId) =>
         _messages.Where(m => JsonDocument.Parse(m.Payload).RootElement.GetProperty("authorizationId").GetGuid() == authorizationId).ToList();
 
-    /// <summary>Espera (sin sleeps fijos) hasta que el outbox publique el evento o se agote el tiempo.</summary>
     public async Task<IntegrationMessage?> WaitForAsync(Guid authorizationId, string type, TimeSpan? timeout = null)
     {
         using var cts = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(10));

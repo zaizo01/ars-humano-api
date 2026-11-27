@@ -6,10 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthAuthorizations.Application.Catalogs;
 
-/// <summary>
-/// Prestadores: catálogo grande, se busca y pagina.
-/// <c>Search</c> coincide exacto con código o RNC, o parcial con el nombre.
-/// </summary>
+// Search: exacto por código o RNC, parcial por nombre.
 public sealed record SearchProvidersQuery : IRequest<CursorPage<ProviderResponse>>
 {
     public string? Search { get; init; }

@@ -5,7 +5,6 @@ using MediatR;
 
 namespace HealthAuthorizations.Application.Authorizations.Update;
 
-/// <summary>Reemplaza los datos y servicios de una autorización activa (semántica PUT).</summary>
 public sealed record UpdateAuthorizationCommand(
     int AffiliateId,
     int ProviderId,
@@ -15,11 +14,10 @@ public sealed record UpdateAuthorizationCommand(
     string? Notes,
     IReadOnlyList<ServiceLineRequest> Services) : IRequest<AuthorizationResponse>, IAuthorizationData
 {
-    /// <summary>Viene de la ruta.</summary>
     [JsonIgnore]
     public Guid Id { get; init; }
 
-    /// <summary>Versión que el cliente leyó; viene del header <c>If-Match</c>.</summary>
+    // Header If-Match
     [JsonIgnore]
     public uint ExpectedVersion { get; init; }
 }

@@ -6,7 +6,6 @@ using HealthAuthorizations.Application.Authorizations;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Utilidades compartidas por las pruebas de integración.</summary>
 internal static class TestApi
 {
     public const string AuthorizationsUrl = "/api/v1/authorizations";

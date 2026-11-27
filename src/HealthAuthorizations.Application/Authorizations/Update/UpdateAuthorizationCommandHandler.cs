@@ -7,11 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthAuthorizations.Application.Authorizations.Update;
 
-/// <summary>
-/// Concurrencia en dos niveles:
-/// 1. If-Match: si la versión que el cliente leyó ya cambió → 412 (no se pisa el cambio de otro usuario).
-/// 2. xmin: si otro proceso modifica la fila entre la lectura y el guardado → 409.
-/// </summary>
+// Dos controles: If-Match distinto a la versión actual → 412.
+// Cambio de otro proceso entre la lectura y el guardado (xmin) → 409.
 public sealed class UpdateAuthorizationCommandHandler(
     IApplicationDbContext db,
     IAmountDistributionPolicy distributionPolicy)

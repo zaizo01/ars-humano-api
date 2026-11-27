@@ -2,7 +2,6 @@ using HealthAuthorizations.Domain.Common;
 
 namespace HealthAuthorizations.Domain.Authorizations;
 
-/// <summary>Servicio autorizado dentro de una autorización, con su reparto de montos.</summary>
 public sealed class AuthorizationDetail
 {
     private AuthorizationDetail()

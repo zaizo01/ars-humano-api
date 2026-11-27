@@ -12,7 +12,7 @@ public sealed record CreateAuthorizationCommand(
     string? Notes,
     IReadOnlyList<ServiceLineRequest> Services) : IRequest<AuthorizationResponse>, IAuthorizationData
 {
-    /// <summary>Viene del header <c>Idempotency-Key</c>, no del body.</summary>
+    // Header Idempotency-Key
     [JsonIgnore]
     public string? IdempotencyKey { get; init; }
 }

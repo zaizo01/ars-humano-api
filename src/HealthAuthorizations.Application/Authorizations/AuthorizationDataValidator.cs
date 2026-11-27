@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthAuthorizations.Application.Authorizations;
 
-/// <summary>Datos editables de una autorización, comunes a crear y actualizar.</summary>
 public interface IAuthorizationData
 {
     int AffiliateId { get; }
@@ -18,10 +17,6 @@ public interface IAuthorizationData
 
 public sealed record ServiceLineRequest(int ServiceTypeId, string? Description, decimal ClaimedAmount);
 
-/// <summary>
-/// Reglas compartidas por crear y actualizar: formato de los datos y existencia de las
-/// entidades referenciadas (no se registran autorizaciones con entidades inexistentes o inactivas).
-/// </summary>
 public abstract class AuthorizationDataValidator<T> : AbstractValidator<T>
     where T : IAuthorizationData
 {
