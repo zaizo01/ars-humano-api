@@ -3,6 +3,12 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.0.1] - 2026-11-27
+
+### Corregido
+- Pipeline: la propuesta de despliegue a producción fallaba si el repo GitOps ya declaraba la versión;
+  ahora termina sin cambios.
+
 ## [1.0.0] - 2026-11-27
 
 Primera versión.
@@ -37,4 +43,5 @@ Primera versión.
 - Despliegue GitOps: manifiestos Kubernetes (Kustomize) y Argo CD en
   [ars-humano-gitops](https://github.com/zaizo01/ars-humano-gitops); migraciones como Job `--migrate`.
 
+[1.0.1]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.1
 [1.0.0]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.0
