@@ -3,6 +3,12 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versionado
 [SemVer](https://semver.org/lang/es/).
 
+## [1.0.2] - 2026-11-27
+
+### Documentación
+- README ampliado: tecnologías y su uso, arquitectura por capas, recorrido de una petición, estructura del
+  proyecto, modelo de datos, endpoints, códigos de error, configuración, métricas de calidad y CI/CD.
+
 ## [1.0.1] - 2026-11-27
 
 ### Corregido
@@ -43,5 +49,6 @@ Primera versión.
 - Despliegue GitOps: manifiestos Kubernetes (Kustomize) y Argo CD en
   [ars-humano-gitops](https://github.com/zaizo01/ars-humano-gitops); migraciones como Job `--migrate`.
 
+[1.0.2]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.2
 [1.0.1]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.1
 [1.0.0]: https://github.com/zaizo01/ars-humano-api/releases/tag/v1.0.0
