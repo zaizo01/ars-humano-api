@@ -8,16 +8,10 @@ public enum AuthorizationStatus
     Inactive = 2,
 }
 
-/// <summary>Partes involucradas en una autorización.</summary>
 public sealed record AuthorizationParties(int AffiliateId, int ProviderId, int ContractorId, int? IntermediaryId);
 
-/// <summary>Línea de servicio solicitada (antes de calcular la distribución).</summary>
 public sealed record ServiceLine(int ServiceTypeId, string? Description, decimal ClaimedAmount);
 
-/// <summary>
-/// Agregado raíz. Garantiza: al menos un servicio, montos no negativos,
-/// totales consistentes con el detalle y que una autorización inactiva no se modifica.
-/// </summary>
 public sealed class Authorization : IAuditableEntity, IHasDomainEvents
 {
     private readonly List<AuthorizationDetail> _details = [];
@@ -29,7 +23,6 @@ public sealed class Authorization : IAuditableEntity, IHasDomainEvents
 
     public Guid Id { get; private set; }
 
-    /// <summary>Número correlativo legible, tomado de una secuencia de la base de datos.</summary>
     public long Number { get; private set; }
 
     public int AffiliateId { get; private set; }
@@ -44,10 +37,9 @@ public sealed class Authorization : IAuditableEntity, IHasDomainEvents
     public decimal TotalCovered { get; private set; }
     public decimal TotalCopay { get; private set; }
 
-    /// <summary>Clave enviada por el cliente para evitar duplicados por reintentos.</summary>
     public string? IdempotencyKey { get; private set; }
 
-    /// <summary>Token de concurrencia optimista (xmin en PostgreSQL).</summary>
+    // xmin de PostgreSQL
     public uint Version { get; private set; }
 
     public DateTimeOffset? DeactivatedAt { get; private set; }
@@ -110,7 +102,6 @@ public sealed class Authorization : IAuditableEntity, IHasDomainEvents
         _domainEvents.Add(new AuthorizationUpdated(Id, Number, ProviderId, ServiceDate, TotalClaimed, TotalCovered, TotalCopay));
     }
 
-    /// <summary>Inactivación lógica: el registro se conserva para fines históricos.</summary>
     public void Deactivate(DateTimeOffset at)
     {
         EnsureActive();

@@ -9,10 +9,7 @@ namespace HealthAuthorizations.Infrastructure.Auth;
 
 public sealed record IssuedToken(string AccessToken, DateTimeOffset ExpiresAt);
 
-/// <summary>
-/// Emisor de tokens para entornos locales/demostración. En un entorno real
-/// el token lo emitiría un proveedor de identidad (Entra ID, Keycloak, etc.).
-/// </summary>
+// Solo para la demo. En producción el token lo emite el proveedor de identidad.
 public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptions, IOptions<List<DemoUserOptions>> users, TimeProvider timeProvider)
 {
     private readonly JwtOptions _jwt = jwtOptions.Value;

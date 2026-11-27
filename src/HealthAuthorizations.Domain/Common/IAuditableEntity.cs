@@ -1,8 +1,5 @@
 namespace HealthAuthorizations.Domain.Common;
 
-/// <summary>
-/// Entidades cuyos campos de auditoría se completan automáticamente al persistir.
-/// </summary>
 public interface IAuditableEntity
 {
     DateTimeOffset CreatedAt { get; set; }

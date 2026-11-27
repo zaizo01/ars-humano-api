@@ -4,12 +4,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HealthAuthorizations.Infrastructure.Persistence.Configurations;
 
-// Los datos iniciales viven en las migraciones (HasData) para que cualquier
-// entorno levantado con `database update` tenga catálogos utilizables.
 
 internal static class CatalogSeed
 {
-    /// <summary>Las identidades arrancan después de los IDs sembrados para no colisionar con inserts futuros.</summary>
+    // Las identity arrancan después de los IDs del seed para no chocar.
     public const long IdentityStart = 1000;
 }
 

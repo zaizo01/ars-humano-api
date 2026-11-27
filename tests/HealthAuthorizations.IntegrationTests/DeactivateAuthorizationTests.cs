@@ -9,7 +9,7 @@ using static HealthAuthorizations.IntegrationTests.TestApi;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Usa el afiliado 3 (contratante 2), que no participa en las demás pruebas.</summary>
+// Afiliado 3 / contratante 2: no los usa ninguna otra prueba.
 [TestFixture]
 public sealed class DeactivateAuthorizationTests
 {

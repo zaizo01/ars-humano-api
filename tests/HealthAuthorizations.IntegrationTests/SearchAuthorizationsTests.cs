@@ -6,10 +6,7 @@ using static HealthAuthorizations.IntegrationTests.TestApi;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>
-/// La base es compartida entre fixtures, así que estas pruebas usan datos propios:
-/// el afiliado 4 (contratante 3) no se usa en ninguna otra prueba.
-/// </summary>
+// La base es compartida: afiliado 4 / contratante 3 son exclusivos de estas pruebas.
 [TestFixture]
 public sealed class SearchAuthorizationsTests
 {

@@ -6,10 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthAuthorizations.Application.Catalogs;
 
-/// <summary>
-/// Afiliados: catálogo grande, por eso se busca y pagina en vez de devolverse completo.
-/// <c>Search</c> coincide exacto con número de afiliado o documento, o parcial con el nombre.
-/// </summary>
+// Search: exacto por número o documento, parcial por nombre.
 public sealed record SearchAffiliatesQuery : IRequest<CursorPage<AffiliateResponse>>
 {
     public string? Search { get; init; }

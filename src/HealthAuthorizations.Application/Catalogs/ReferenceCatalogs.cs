@@ -5,9 +5,7 @@ using Microsoft.Extensions.Caching.Hybrid;
 
 namespace HealthAuthorizations.Application.Catalogs;
 
-// Catálogos pequeños y de lectura frecuente: se devuelven completos y se cachean.
-// HybridCache evita la "estampida" (una sola consulta aunque lleguen muchas solicitudes a la vez)
-// y permite agregar Redis como segundo nivel sin cambiar estos handlers.
+// Catálogos chicos: se devuelven completos y en caché.
 
 public enum ReferenceCatalog
 {

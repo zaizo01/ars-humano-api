@@ -15,17 +15,12 @@ public sealed class OutboxOptions
     public TimeSpan PollingInterval { get; init; } = TimeSpan.FromSeconds(5);
     public int BatchSize { get; init; } = 50;
 
-    /// <summary>Tras este número de fallos el mensaje deja de reintentarse y queda para revisión manual.</summary>
+    // Después de esto el mensaje queda para revisión manual.
     public int MaxAttempts { get; init; } = 10;
 }
 
-/// <summary>
-/// Publica periódicamente los mensajes pendientes del outbox.
-/// <c>FOR UPDATE SKIP LOCKED</c> permite correr varias réplicas de la API: cada una toma un lote
-/// distinto y ningún mensaje lo procesan dos réplicas a la vez.
-/// Entrega "al menos una vez": si se publica pero falla el marcado, se vuelve a publicar;
-/// los consumidores deduplican por <c>MessageId</c>.
-/// </summary>
+// SKIP LOCKED: con varias réplicas cada una toma un lote distinto.
+// Entrega al menos una vez: si falla el marcado se republica (el consumidor deduplica por MessageId).
 internal sealed class OutboxProcessor(
     IServiceScopeFactory scopeFactory,
     IOptions<OutboxOptions> options,
@@ -46,7 +41,7 @@ internal sealed class OutboxProcessor(
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Un fallo (p. ej. base no disponible) no debe detener el procesador: se reintenta en el próximo ciclo.
+                // No tumbar el servicio; se reintenta en el siguiente ciclo.
                 logger.LogError(ex, "Error procesando el outbox");
             }
         }

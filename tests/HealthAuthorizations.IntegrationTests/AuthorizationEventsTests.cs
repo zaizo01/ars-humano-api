@@ -8,7 +8,6 @@ using static HealthAuthorizations.IntegrationTests.TestApi;
 
 namespace HealthAuthorizations.IntegrationTests;
 
-/// <summary>Recorrido completo: API → tabla OutboxMessages → procesador → publicador.</summary>
 [TestFixture]
 public sealed class AuthorizationEventsTests
 {

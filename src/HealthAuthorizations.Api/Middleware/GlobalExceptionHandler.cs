@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HealthAuthorizations.Api.Middleware;
 
-/// <summary>Traduce excepciones a respuestas ProblemDetails (RFC 9457) consistentes.</summary>
 internal sealed class GlobalExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<GlobalExceptionHandler> logger)
     : IExceptionHandler
 {

@@ -1,6 +1,5 @@
 namespace HealthAuthorizations.Application.Catalogs;
 
-/// <summary>Elemento de catálogo simple (tipos de prestador, tipos de servicio, intermediarios).</summary>
 public sealed record CatalogItemResponse(int Id, string Code, string Name, bool IsActive);
 
 public sealed record ContractorResponse(int Id, string Code, string Name, string TaxId, int? IntermediaryId, bool IsActive);

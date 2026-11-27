@@ -27,7 +27,6 @@ public static class DependencyInjection
 
         TypeAdapterConfig.GlobalSettings.Scan(assembly);
 
-        // Caché en memoria (L1). Registrar IDistributedCache (p. ej. Redis) lo convierte en L2 sin cambiar los handlers.
         services.AddHybridCache();
 
         services.AddOptions<CoverageOptions>()

@@ -1,8 +1,5 @@
 namespace HealthAuthorizations.Domain.Catalogs;
 
-// Catálogos de referencia. Son entidades simples (sin comportamiento) porque
-// en este alcance solo se consultan y se usan como claves foráneas.
-
 public sealed class ProviderType
 {
     public int Id { get; set; }

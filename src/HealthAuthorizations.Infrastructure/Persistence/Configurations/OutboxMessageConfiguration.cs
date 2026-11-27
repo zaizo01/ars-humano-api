@@ -15,7 +15,7 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
         builder.Property(m => m.Payload).HasColumnType("jsonb");
         builder.Property(m => m.LastError).HasMaxLength(OutboxMessage.MaxErrorLength);
 
-        // El procesador solo lee pendientes: índice parcial pequeño aunque la tabla crezca.
+        // Índice parcial: solo pendientes.
         builder.HasIndex(m => m.OccurredAt).HasFilter("\"ProcessedAt\" IS NULL");
     }
 }
